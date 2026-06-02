@@ -1,0 +1,151 @@
+// Prisma schema — אפליקציית ניהול שעות התנדבות
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+  SUPERVISOR
+}
+
+enum GradeLevel {
+  GRADE_10 // י'
+  GRADE_11 // י"א
+}
+
+enum Semester {
+  A // מחצית א'
+  B // מחצית ב'
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  full_name     String
+  email         String   @unique
+  password_hash String
+  role          Role
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  student          Student?
+  teacher          Teacher?
+  supervisedPlaces VolunteerPlace[]       @relation("PlaceSupervisor")
+  evaluations      SupervisorEvaluation[] @relation("EvaluationAuthor")
+}
+
+model Student {
+  id                  Int        @id @default(autoincrement())
+  user_id             Int        @unique
+  first_name          String
+  last_name           String
+  national_id         String     @unique
+  grade_level         GradeLevel
+  class_name          String
+  homeroom_teacher_id Int?
+  created_at          DateTime   @default(now())
+  updated_at          DateTime   @updatedAt
+
+  user             User                        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  homeroom_teacher Teacher?                    @relation(fields: [homeroom_teacher_id], references: [id])
+  placements       StudentVolunteerPlacement[]
+  hours            VolunteerHours[]
+  reflections      Reflection[]
+  evaluations      SupervisorEvaluation[]
+}
+
+model Teacher {
+  id         Int    @id @default(autoincrement())
+  user_id    Int    @unique
+  full_name  String
+  email      String
+  class_name String
+
+  user     User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  students Student[]
+}
+
+model VolunteerPlace {
+  id                Int      @id @default(autoincrement())
+  place_name        String
+  supervisor_name   String
+  supervisor_phone  String
+  supervisor_email  String
+  supervisor_user_id Int?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  supervisor  User?                       @relation("PlaceSupervisor", fields: [supervisor_user_id], references: [id])
+  placements  StudentVolunteerPlacement[]
+  hours       VolunteerHours[]
+  evaluations SupervisorEvaluation[]
+}
+
+model StudentVolunteerPlacement {
+  id                Int       @id @default(autoincrement())
+  student_id        Int
+  volunteer_place_id Int
+  start_date        DateTime  @default(now())
+  end_date          DateTime?
+  is_active         Boolean   @default(true)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  student         Student          @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  volunteer_place VolunteerPlace   @relation(fields: [volunteer_place_id], references: [id])
+  hours           VolunteerHours[]
+}
+
+model VolunteerHours {
+  id                Int      @id @default(autoincrement())
+  student_id        Int
+  volunteer_place_id Int
+  placement_id      Int
+  volunteer_date    DateTime
+  start_time        String // "HH:MM"
+  end_time          String // "HH:MM"
+  calculated_hours  Float
+  description       String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  student         Student                   @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  volunteer_place VolunteerPlace            @relation(fields: [volunteer_place_id], references: [id])
+  placement       StudentVolunteerPlacement @relation(fields: [placement_id], references: [id])
+}
+
+model Reflection {
+  id           Int      @id @default(autoincrement())
+  student_id   Int
+  semester     Semester
+  content      String
+  submitted_at DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  student Student @relation(fields: [student_id], references: [id], onDelete: Cascade)
+
+  @@unique([student_id, semester])
+}
+
+model SupervisorEvaluation {
+  id                 Int      @id @default(autoincrement())
+  student_id         Int
+  volunteer_place_id Int
+  supervisor_user_id Int
+  evaluation_text    String
+  evaluation_date    DateTime @default(now())
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  student         Student        @relation(fields: [student_id], references: [id], onDelete: Cascade)
+  volunteer_place VolunteerPlace @relation(fields: [volunteer_place_id], references: [id])
+  supervisor      User           @relation("EvaluationAuthor", fields: [supervisor_user_id], references: [id])
+}

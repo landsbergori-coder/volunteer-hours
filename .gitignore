@@ -1,0 +1,22 @@
+node_modules
+.next
+out
+build
+*.log
+.DS_Store
+
+# netlify
+.netlify
+
+# claude code local settings
+.claude
+
+# database (SQLite remnants from local dev)
+prisma/dev.db
+prisma/dev.db-journal
+prisma/migrations/dev.db
+
+# env — מכיל סודות (מחרוזות חיבור, JWT). אין להעלות ל-git.
+.env
+.env.local
+.env*.local

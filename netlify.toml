@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Prisma מוריד את ה-engine המתאים לתשתית Netlify בזמן ה-postinstall
+  PRISMA_CLI_BINARY_TARGETS = "rhel-openssl-3.0.x"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
