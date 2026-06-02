@@ -7,8 +7,13 @@ import {
   createSession,
   setSessionCookie,
   dashboardPath,
+  getSession,
 } from "@/lib/auth";
-import { loginSchema, registerStudentSchema } from "@/lib/validation";
+import {
+  loginSchema,
+  registerStudentSchema,
+  changePasswordSchema,
+} from "@/lib/validation";
 import { ActionState, parseForm } from "@/lib/form";
 import { Role } from "@prisma/client";
 
@@ -31,8 +36,10 @@ export async function loginAction(
     userId: user.id,
     role: user.role,
     name: user.full_name,
+    mustChangePassword: user.must_change_password,
   });
   await setSessionCookie(token);
+  if (user.must_change_password) redirect("/change-password");
   redirect(dashboardPath(user.role));
 }
 
@@ -94,4 +101,39 @@ export async function registerStudentAction(
   });
   await setSessionCookie(token);
   redirect("/student");
+}
+
+/** החלפת סיסמה — לכניסה ראשונה כפויה או החלפה יזומה ע"י כל משתמש מחובר. */
+export async function changePasswordAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const parsed = parseForm(changePasswordSchema, formData);
+  if (!parsed.success) return { ok: false, errors: parsed.errors };
+  const d = parsed.data;
+
+  const user = await prisma.user.findUnique({ where: { id: session.userId } });
+  if (!user) redirect("/login");
+
+  if (!(await bcrypt.compare(d.current_password, user.password_hash)))
+    return { ok: false, errors: { current_password: "הסיסמה הנוכחית שגויה" } };
+
+  const password_hash = await bcrypt.hash(d.new_password, 10);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { password_hash, must_change_password: false },
+  });
+
+  // הנפקת cookie מחודש ללא דגל החלפת הסיסמה
+  const token = await createSession({
+    userId: user.id,
+    role: user.role,
+    name: user.full_name,
+    mustChangePassword: false,
+  });
+  await setSessionCookie(token);
+  redirect(dashboardPath(user.role));
 }

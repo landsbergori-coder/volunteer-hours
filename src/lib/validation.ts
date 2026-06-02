@@ -84,3 +84,24 @@ export const createUserSchema = z.object({
   }),
   class_name: z.string().trim().optional(),
 });
+
+export const createAdminSchema = z.object({
+  full_name: z.string().trim().min(1, "שם מלא הוא שדה חובה"),
+  email: z.string().trim().email("אימייל אינו תקין"),
+  password: z.string().min(6, "סיסמה זמנית חייבת להכיל לפחות 6 תווים"),
+});
+
+export const changePasswordSchema = z
+  .object({
+    current_password: z.string().min(1, "יש להזין את הסיסמה הנוכחית"),
+    new_password: z.string().min(6, "סיסמה חדשה חייבת להכיל לפחות 6 תווים"),
+    confirm_password: z.string(),
+  })
+  .refine((d) => d.new_password === d.confirm_password, {
+    message: "הסיסמאות אינן תואמות",
+    path: ["confirm_password"],
+  })
+  .refine((d) => d.new_password !== d.current_password, {
+    message: "הסיסמה החדשה חייבת להיות שונה מהנוכחית",
+    path: ["new_password"],
+  });

@@ -15,6 +15,16 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = await verifyToken(token);
 
+  // משתמש מחובר שחייב להחליף סיסמה -> נעילה למסך החלפת הסיסמה בלבד
+  if (session?.mustChangePassword && pathname !== "/change-password") {
+    return NextResponse.redirect(new URL("/change-password", req.url));
+  }
+
+  // משתמש שאינו מחובר ומנסה לגשת למסך החלפת סיסמה -> התחברות
+  if (!session && pathname === "/change-password") {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
   // משתמש מחובר שמנסה לגשת לדף ציבורי -> הפניה לדשבורד
   if (session && PUBLIC_PATHS.includes(pathname)) {
     return NextResponse.redirect(new URL(dashboardPath(session.role), req.url));
@@ -39,6 +49,7 @@ export const config = {
   matcher: [
     "/login",
     "/register",
+    "/change-password",
     "/student/:path*",
     "/teacher/:path*",
     "/admin/:path*",

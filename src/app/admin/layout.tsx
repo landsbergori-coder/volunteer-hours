@@ -15,6 +15,7 @@ export default async function AdminLayout({
       links={[
         { href: "/admin", label: "סקירה כללית" },
         { href: "/admin/accounts", label: "ניהול חשבונות" },
+        { href: "/admin/admins", label: "ניהול מנהלים" },
       ]}
     >
       {children}

@@ -13,6 +13,7 @@ export type SessionPayload = {
   userId: number;
   role: Role;
   name: string;
+  mustChangePassword?: boolean;
 };
 
 export async function createSession(payload: SessionPayload): Promise<string> {
@@ -33,6 +34,7 @@ export async function verifyToken(
       userId: payload.userId as number,
       role: payload.role as Role,
       name: payload.name as string,
+      mustChangePassword: Boolean(payload.mustChangePassword),
     };
   } catch {
     return null;
@@ -69,6 +71,7 @@ export async function requireRole(
 ): Promise<SessionPayload> {
   const session = await getSession();
   if (!session) redirect("/login");
+  if (session.mustChangePassword) redirect("/change-password");
   if (allowed.length > 0 && !allowed.includes(session.role)) {
     redirect(dashboardPath(session.role));
   }
