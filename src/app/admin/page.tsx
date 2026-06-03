@@ -4,7 +4,7 @@ import { getAdminStats } from "@/lib/stats";
 import { Card, StatCard, SectionTitle, EmptyState, Badge } from "@/components/ui";
 import { formatHours } from "@/lib/hours";
 import { Role } from "@prisma/client";
-import { Users, Clock, MapPin, TrendingUp, FileSpreadsheet } from "lucide-react";
+import { Users, Clock, MapPin, TrendingUp, FileSpreadsheet, Trophy } from "lucide-react";
 import { gradeLabel } from "@/lib/validation";
 import { currentGradeProgress, isBagrutEligible } from "@/lib/progress";
 import { Tabs } from "@/components/Tabs";
@@ -50,6 +50,8 @@ export default async function AdminDashboard() {
       hasEvaluation: s.evaluations.length > 0,
     };
   });
+
+  const bagrutEligible = rows.filter((r) => r.bagrutEligible);
 
   return (
     <div className="space-y-6">
@@ -104,7 +106,36 @@ export default async function AdminDashboard() {
             id: "stats",
             label: "סטטיסטיקות",
             content: (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <div className="space-y-6">
+                <Card>
+                  <SectionTitle
+                    action={
+                      <span className="flex items-center gap-2">
+                        <Trophy size={18} className="text-amber-500" />
+                        <Badge tone={bagrutEligible.length ? "amber" : "gray"}>
+                          {bagrutEligible.length}
+                        </Badge>
+                      </span>
+                    }
+                  >
+                    זכאים לתעודת בגרות חברתית
+                  </SectionTitle>
+                  {bagrutEligible.length === 0 ? (
+                    <EmptyState>אין כרגע תלמידים זכאים.</EmptyState>
+                  ) : (
+                    <ul className="flex flex-wrap gap-2">
+                      {bagrutEligible.map((s) => (
+                        <li key={s.id}>
+                          <Badge tone="green">
+                            {s.name} · {s.class_name}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Card>
+
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <Card>
                   <SectionTitle>ממוצע שעות לפי כיתה</SectionTitle>
                   <div className="overflow-x-auto">
@@ -146,6 +177,7 @@ export default async function AdminDashboard() {
                     </ul>
                   )}
                 </Card>
+                </div>
               </div>
             ),
           },

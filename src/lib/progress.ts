@@ -59,3 +59,15 @@ export function isBagrutEligible(hours: HourLike[]): boolean {
     b.GRADE_12 >= BAGRUT_PER_GRADE
   );
 }
+
+/** הערכה מילולית לתעודת מחצית לפי סטטוס שעות ההתנדבות בשכבה הנוכחית. */
+export function certificateEvaluation(done: number, target: number): string {
+  if (done <= 0) {
+    return "עדיין לא התחלת את ביצוע שעות ההתנדבות בקהילה. להזכירך, ההתנדבות היא חובה של משרד החינוך ותנאי לתעודת בגרות. יש להתחיל בביצוע שעות ההתנדבות בהקדם.";
+  }
+  if (done < target) {
+    const d = Math.round(done * 10) / 10;
+    return `התחלת לבצע את שעות ההתנדבות בקהילה. עד כה ביצעת ${d} מתוך ${target} השעות הנדרשות בשכבה זו.`;
+  }
+  return "סיימת את שעות ההתנדבות הנדרשות לשנה זו, כל הכבוד!";
+}

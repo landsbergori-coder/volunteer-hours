@@ -1,9 +1,9 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { Card, StatCard, SectionTitle, EmptyState } from "@/components/ui";
+import { Card, StatCard, SectionTitle, EmptyState, Badge } from "@/components/ui";
 import { formatHours } from "@/lib/hours";
 import { Role } from "@prisma/client";
-import { Users, Clock, FileSpreadsheet } from "lucide-react";
+import { Users, Clock, FileSpreadsheet, Trophy } from "lucide-react";
 import { currentGradeProgress, isBagrutEligible } from "@/lib/progress";
 import { StudentsTable, TeacherRow } from "./StudentsTable";
 
@@ -52,6 +52,7 @@ export default async function TeacherDashboard() {
 
   const totalHours = rows.reduce((s, r) => s + r.totalHours, 0);
   const avg = rows.length > 0 ? totalHours / rows.length : 0;
+  const eligible = rows.filter((r) => r.bagrutEligible);
 
   return (
     <div className="space-y-6">
@@ -80,21 +81,45 @@ export default async function TeacherDashboard() {
         />
       </div>
 
+      {rows.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <a href="/api/export/reflections?scope=class" className="btn-secondary">
+            <FileSpreadsheet size={16} /> ייצוא רפלקציות והערכות (הכיתה)
+          </a>
+          <a href="/api/export/evaluations" className="btn-secondary">
+            <FileSpreadsheet size={16} /> הפק הערכה לתעודה
+          </a>
+        </div>
+      )}
+
       <Card>
         <SectionTitle
           action={
-            rows.length > 0 ? (
-              <a
-                href="/api/export/reflections?scope=class"
-                className="inline-flex items-center gap-1 text-sm text-brand-600 hover:underline"
-              >
-                <FileSpreadsheet size={16} /> ייצוא רפלקציות והערכות (הכיתה)
-              </a>
-            ) : undefined
+            <span className="flex items-center gap-2">
+              <Trophy size={18} className="text-amber-500" /> זכאים לבגרות חברתית
+              <Badge tone={eligible.length ? "amber" : "gray"}>
+                {eligible.length}
+              </Badge>
+            </span>
           }
         >
-          תלמידי הכיתה
+          תעודת בגרות חברתית
         </SectionTitle>
+        {eligible.length === 0 ? (
+          <EmptyState>אין כרגע תלמידים זכאים בכיתה.</EmptyState>
+        ) : (
+          <ul className="flex flex-wrap gap-2">
+            {eligible.map((s) => (
+              <li key={s.id}>
+                <Badge tone="green">{s.name}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card>
+        <SectionTitle>תלמידי הכיתה</SectionTitle>
         {rows.length === 0 ? (
           <EmptyState>אין תלמידים רשומים בכיתה זו עדיין.</EmptyState>
         ) : (
