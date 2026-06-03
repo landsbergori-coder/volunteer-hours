@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, FileSpreadsheet } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getStudentProfile } from "@/lib/queries";
@@ -27,12 +27,20 @@ export default async function TeacherStudentCard({
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/teacher"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
-      >
-        <ArrowRight size={16} /> חזרה לרשימת הכיתה
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/teacher"
+          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
+        >
+          <ArrowRight size={16} /> חזרה לרשימת הכיתה
+        </Link>
+        <a
+          href={`/api/export/reflections?scope=student&value=${profile.id}`}
+          className="btn-secondary"
+        >
+          <FileSpreadsheet size={16} /> ייצוא רפלקציה והערכות
+        </a>
+      </div>
       <StudentCard profile={profile} />
     </div>
   );

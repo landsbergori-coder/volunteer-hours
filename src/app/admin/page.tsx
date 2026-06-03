@@ -4,7 +4,8 @@ import { getAdminStats } from "@/lib/stats";
 import { Card, StatCard, SectionTitle, EmptyState, Badge } from "@/components/ui";
 import { formatHours } from "@/lib/hours";
 import { Role } from "@prisma/client";
-import { Users, Clock, MapPin, TrendingUp } from "lucide-react";
+import { Users, Clock, MapPin, TrendingUp, FileSpreadsheet } from "lucide-react";
+import { gradeLabel } from "@/lib/validation";
 import { AdminStudentsTable, AdminRow } from "./AdminStudentsTable";
 
 export default async function AdminDashboard() {
@@ -53,6 +54,27 @@ export default async function AdminDashboard() {
         <StatCard label="ממוצע שעות לתלמיד" value={`${formatHours(stats.avgHoursPerStudent)}`} icon={<TrendingUp size={22} />} />
         <StatCard label="מקומות התנדבות" value={stats.placeCount} icon={<MapPin size={22} />} />
       </div>
+
+      <Card>
+        <SectionTitle>ייצוא רפלקציות והערכות אחראי</SectionTitle>
+        <div className="flex flex-wrap gap-2">
+          <a href="/api/export/reflections?scope=all" className="btn-secondary">
+            <FileSpreadsheet size={16} /> כל התלמידים
+          </a>
+          <a
+            href="/api/export/reflections?scope=grade&value=GRADE_10"
+            className="btn-secondary"
+          >
+            <FileSpreadsheet size={16} /> שכבה {gradeLabel.GRADE_10}
+          </a>
+          <a
+            href="/api/export/reflections?scope=grade&value=GRADE_11"
+            className="btn-secondary"
+          >
+            <FileSpreadsheet size={16} /> שכבה {gradeLabel.GRADE_11}
+          </a>
+        </div>
+      </Card>
 
       <Card>
         <SectionTitle>כל התלמידים</SectionTitle>

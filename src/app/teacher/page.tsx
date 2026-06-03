@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { Card, StatCard, SectionTitle, EmptyState } from "@/components/ui";
 import { formatHours } from "@/lib/hours";
 import { Role } from "@prisma/client";
-import { Users, Clock } from "lucide-react";
+import { Users, Clock, FileSpreadsheet } from "lucide-react";
 import { StudentsTable, TeacherRow } from "./StudentsTable";
 
 export default async function TeacherDashboard() {
@@ -76,7 +76,20 @@ export default async function TeacherDashboard() {
       </div>
 
       <Card>
-        <SectionTitle>תלמידי הכיתה</SectionTitle>
+        <SectionTitle
+          action={
+            rows.length > 0 ? (
+              <a
+                href="/api/export/reflections?scope=class"
+                className="inline-flex items-center gap-1 text-sm text-brand-600 hover:underline"
+              >
+                <FileSpreadsheet size={16} /> ייצוא רפלקציות והערכות (הכיתה)
+              </a>
+            ) : undefined
+          }
+        >
+          תלמידי הכיתה
+        </SectionTitle>
         {rows.length === 0 ? (
           <EmptyState>אין תלמידים רשומים בכיתה זו עדיין.</EmptyState>
         ) : (

@@ -4,12 +4,15 @@ import { Card, SectionTitle, EmptyState, Badge } from "@/components/ui";
 import { roleLabel } from "@/lib/validation";
 import { Role } from "@prisma/client";
 import { CreateUserForm } from "./CreateUserForm";
+import { DeleteStaffButton } from "./DeleteStaffButton";
+
+export const dynamic = "force-dynamic";
 
 export default async function AccountsPage() {
   await requireRole(Role.ADMIN);
   const users = await prisma.user.findMany({
     where: { role: { in: [Role.TEACHER, Role.SUPERVISOR] } },
-    include: { teacher: true },
+    include: { teacher: { include: { _count: { select: { students: true } } } } },
     orderBy: [{ role: "asc" }, { full_name: "asc" }],
   });
 
@@ -40,6 +43,7 @@ export default async function AccountsPage() {
                     <th className="py-2 font-medium">תפקיד</th>
                     <th className="py-2 font-medium">אימייל</th>
                     <th className="py-2 font-medium">כיתה</th>
+                    <th className="py-2 text-left font-medium">מחיקה</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -53,6 +57,15 @@ export default async function AccountsPage() {
                       </td>
                       <td className="py-2 text-gray-500">{u.email}</td>
                       <td className="py-2">{u.teacher?.class_name ?? "—"}</td>
+                      <td className="py-2">
+                        <div className="flex justify-end">
+                          <DeleteStaffButton
+                            userId={u.id}
+                            name={u.full_name}
+                            studentCount={u.teacher?._count.students}
+                          />
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
