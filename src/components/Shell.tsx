@@ -28,7 +28,7 @@ export function Shell({
               <HeartHandshake size={20} />
             </div>
             <div>
-              <div className="text-sm font-bold leading-tight">מחויבות אישית</div>
+              <div className="text-sm font-bold leading-tight">מעורבות חברתית</div>
               <div className="text-xs text-gray-500">ניהול שעות התנדבות</div>
             </div>
           </div>

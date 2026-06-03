@@ -9,7 +9,7 @@ const heebo = Heebo({
 });
 
 export const metadata: Metadata = {
-  title: "מחויבות אישית — ניהול שעות התנדבות",
+  title: "מעורבות חברתית — ניהול שעות התנדבות",
   description: "מערכת לניהול ורישום שעות התנדבות לתלמידי שכבות י' ו-י\"א",
 };
 

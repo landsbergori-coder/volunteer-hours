@@ -10,7 +10,7 @@ export default function LoginPage() {
           <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600 text-white">
             <HeartHandshake size={28} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">מחויבות אישית</h1>
+          <h1 className="text-2xl font-bold text-gray-900">מעורבות חברתית</h1>
           <p className="text-sm text-gray-500">
             מערכת לניהול ורישום שעות התנדבות
           </p>
