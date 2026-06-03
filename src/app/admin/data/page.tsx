@@ -1,23 +1,38 @@
+import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card, SectionTitle, Badge } from "@/components/ui";
 import { gradeLabel } from "@/lib/validation";
-import { deleteGradeAction, deleteAllDataAction } from "@/actions/admin";
+import {
+  deleteGradeAction,
+  deleteAllDataAction,
+  archiveGradeAction,
+  archiveAllDataAction,
+} from "@/actions/admin";
 import { ConfirmDeleteForm } from "./ConfirmDeleteForm";
+import { ArchiveButton } from "./ArchiveButton";
 import { Role } from "@prisma/client";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Archive } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function DataManagementPage() {
   await requireRole(Role.ADMIN);
 
-  const [g10, g11, totalStudents, totalHours] = await Promise.all([
-    prisma.student.count({ where: { grade_level: "GRADE_10" } }),
-    prisma.student.count({ where: { grade_level: "GRADE_11" } }),
-    prisma.student.count(),
-    prisma.volunteerHours.count(),
-  ]);
+  const [g10, g11, totalStudents, totalHours, archivedCount] =
+    await Promise.all([
+      prisma.student.count({
+        where: { grade_level: "GRADE_10", user: { archived_at: null } },
+      }),
+      prisma.student.count({
+        where: { grade_level: "GRADE_11", user: { archived_at: null } },
+      }),
+      prisma.student.count({ where: { user: { archived_at: null } } }),
+      prisma.volunteerHours.count(),
+      prisma.user.count({
+        where: { archived_at: { not: null }, role: { not: "ADMIN" } },
+      }),
+    ]);
 
   return (
     <div className="space-y-6">
@@ -35,10 +50,23 @@ export default async function DataManagementPage() {
             <p className="font-semibold">אזור מסוכן</p>
             <p>
               למחיקת תלמיד בודד — פתח/י את כרטיס התלמיד. למחיקת מחנך/אחראי — מסך
-              ניהול חשבונות. כאן מתבצעות מחיקות רחבות בלבד.
+              ניהול חשבונות. כאן מתבצעות פעולות רחבות. <strong>ארכיון</strong>{" "}
+              שומר את הנתונים וניתן לשחזר; <strong>מחיקה</strong> בלתי-הפיכה.
             </p>
           </div>
         </div>
+      </Card>
+
+      <Card className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm">
+          <Archive size={18} className="text-gray-500" />
+          <span>
+            פריטים בארכיון: <strong>{archivedCount}</strong>
+          </span>
+        </div>
+        <Link href="/admin/archive" className="btn-secondary">
+          <Archive size={16} /> פתיחת הארכיון (שחזור / מחיקה)
+        </Link>
       </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -59,11 +87,19 @@ export default async function DataManagementPage() {
                 שכבה {gradeLabel.GRADE_10}{" "}
                 <span className="text-sm text-gray-400">({g10} תלמידים)</span>
               </div>
+              <div className="mb-3">
+                <ArchiveButton
+                  action={archiveGradeAction}
+                  hidden={{ grade: "GRADE_10" }}
+                  label={`העברת שכבה ${gradeLabel.GRADE_10} לארכיון`}
+                  confirmMessage={`להעביר את כל שכבה ${gradeLabel.GRADE_10} לארכיון? ניתן לשחזר בהמשך.`}
+                />
+              </div>
               <ConfirmDeleteForm
                 action={deleteGradeAction}
                 expected={gradeLabel.GRADE_10}
                 hidden={{ grade: "GRADE_10" }}
-                buttonLabel={`מחיקת כל שכבה ${gradeLabel.GRADE_10}`}
+                buttonLabel={`מחיקת כל שכבה ${gradeLabel.GRADE_10} לצמיתות`}
               />
             </div>
 
@@ -72,11 +108,19 @@ export default async function DataManagementPage() {
                 שכבה {gradeLabel.GRADE_11}{" "}
                 <span className="text-sm text-gray-400">({g11} תלמידים)</span>
               </div>
+              <div className="mb-3">
+                <ArchiveButton
+                  action={archiveGradeAction}
+                  hidden={{ grade: "GRADE_11" }}
+                  label={`העברת שכבה ${gradeLabel.GRADE_11} לארכיון`}
+                  confirmMessage={`להעביר את כל שכבה ${gradeLabel.GRADE_11} לארכיון? ניתן לשחזר בהמשך.`}
+                />
+              </div>
               <ConfirmDeleteForm
                 action={deleteGradeAction}
                 expected={gradeLabel.GRADE_11}
                 hidden={{ grade: "GRADE_11" }}
-                buttonLabel={`מחיקת כל שכבה ${gradeLabel.GRADE_11}`}
+                buttonLabel={`מחיקת כל שכבה ${gradeLabel.GRADE_11} לצמיתות`}
               />
             </div>
           </div>
@@ -94,10 +138,17 @@ export default async function DataManagementPage() {
             להמשיך. נכון לעכשיו: {totalStudents} תלמידים, {totalHours} דיווחי
             שעות.
           </p>
+          <div className="mb-3">
+            <ArchiveButton
+              action={archiveAllDataAction}
+              label="העברת כל הנתונים לארכיון"
+              confirmMessage="להעביר את כל הנתונים (תלמידים, מחנכים, אחראים) לארכיון? ניתן לשחזר בהמשך."
+            />
+          </div>
           <ConfirmDeleteForm
             action={deleteAllDataAction}
             expected="מחק הכל"
-            buttonLabel="מחיקת כל הנתונים"
+            buttonLabel="מחיקת כל הנתונים לצמיתות"
           />
         </Card>
       </div>

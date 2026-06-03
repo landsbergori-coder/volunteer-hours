@@ -15,7 +15,7 @@ export default async function TeacherDashboard() {
 
   // רק תלמידי הכיתה של המחנך/ת
   const students = await prisma.student.findMany({
-    where: { homeroom_teacher_id: teacher.id },
+    where: { homeroom_teacher_id: teacher.id, user: { archived_at: null } },
     include: {
       hours: { select: { calculated_hours: true } },
       reflections: { select: { semester: true } },

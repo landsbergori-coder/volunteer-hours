@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
   const format = req.nextUrl.searchParams.get("format") === "csv" ? "csv" : "xlsx";
 
   const students = await prisma.student.findMany({
+    where: { user: { archived_at: null } },
     include: {
       homeroom_teacher: { select: { full_name: true } },
       hours: { select: { calculated_hours: true } },

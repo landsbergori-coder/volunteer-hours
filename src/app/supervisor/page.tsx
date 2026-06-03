@@ -16,7 +16,7 @@ export default async function SupervisorDashboard() {
     where: { supervisor_user_id: session.userId },
     include: {
       placements: {
-        where: { is_active: true },
+        where: { is_active: true, student: { user: { archived_at: null } } },
         include: {
           student: {
             include: {

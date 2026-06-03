@@ -17,6 +17,7 @@ export default async function AdminLayout({
         { href: "/admin/accounts", label: "ניהול חשבונות" },
         { href: "/admin/admins", label: "ניהול מנהלים" },
         { href: "/admin/data", label: "ניהול נתונים" },
+        { href: "/admin/archive", label: "ארכיון" },
       ]}
     >
       {children}

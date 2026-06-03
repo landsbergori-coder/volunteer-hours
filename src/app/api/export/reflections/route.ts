@@ -48,6 +48,9 @@ export async function GET(req: NextRequest) {
     return new NextResponse("Unauthorized", { status: 403 });
   }
 
+  // אין לכלול תלמידים מאורכבים בייצוא
+  where = { ...where, user: { archived_at: null } };
+
   const students = await prisma.student.findMany({
     where,
     include: {

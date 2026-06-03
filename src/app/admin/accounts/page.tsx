@@ -11,7 +11,10 @@ export const dynamic = "force-dynamic";
 export default async function AccountsPage() {
   await requireRole(Role.ADMIN);
   const users = await prisma.user.findMany({
-    where: { role: { in: [Role.TEACHER, Role.SUPERVISOR] } },
+    where: {
+      role: { in: [Role.TEACHER, Role.SUPERVISOR] },
+      archived_at: null,
+    },
     include: { teacher: { include: { _count: { select: { students: true } } } } },
     orderBy: [{ role: "asc" }, { full_name: "asc" }],
   });

@@ -118,41 +118,18 @@ export async function deleteAdminAction(formData: FormData): Promise<void> {
   revalidatePath("/admin/admins");
 }
 
-// ----- מחיקת נתונים -----
+// ----- מחיקה / ארכיון של נתונים -----
 
 /**
- * מחיקת תלמיד וכל הנתונים שלו (שעות, רפלקציות, שיוכים, הערכות).
- * מחיקת ה-User מפעילה מחיקה מדורגת (cascade) של כל הקשרים.
+ * מחיקה לצמיתות של משתמש (לפי תפקיד). מחיקת ה-User מפעילה מחיקה מדורגת.
+ * עבור אחראי: מנתקים אותו ממקומות ומוחקים את ההערכות שכתב תחילה.
+ * מנהלים אינם נמחקים דרך מסלול זה.
  */
-export async function deleteStudentAction(formData: FormData): Promise<void> {
-  await requireRole(Role.ADMIN);
-  const studentId = Number(formData.get("student_id"));
-  if (!studentId) return;
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-    select: { user_id: true },
-  });
-  if (!student) return;
-  await prisma.user.delete({ where: { id: student.user_id } });
-  revalidatePath("/admin");
-  redirect("/admin");
-}
-
-/**
- * מחיקת מחנך/ת או אחראי. תלמידי המחנך נשמרים (homeroom_teacher_id -> null).
- * עבור אחראי: ההערכות שכתב נמחקות תחילה (אין למחוק את התלמידים שהעריך).
- */
-export async function deleteStaffAction(formData: FormData): Promise<void> {
-  await requireRole(Role.ADMIN);
-  const userId = Number(formData.get("user_id"));
-  if (!userId) return;
+async function purgeUserById(userId: number): Promise<void> {
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || (user.role !== Role.TEACHER && user.role !== Role.SUPERVISOR))
-    return;
-
+  if (!user || user.role === Role.ADMIN) return;
   await prisma.$transaction(async (tx) => {
     if (user.role === Role.SUPERVISOR) {
-      // ניתוק המקומות שבאחריותו ומחיקת ההערכות שכתב
       await tx.volunteerPlace.updateMany({
         where: { supervisor_user_id: userId },
         data: { supervisor_user_id: null },
@@ -161,21 +138,73 @@ export async function deleteStaffAction(formData: FormData): Promise<void> {
         where: { supervisor_user_id: userId },
       });
     }
-    // מחיקת ה-User; מחנך -> Teacher נמחק, תלמידיו עוברים ל-null אוטומטית
     await tx.user.delete({ where: { id: userId } });
   });
+}
 
+async function userIdForStudent(studentId: number): Promise<number | null> {
+  const s = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { user_id: true },
+  });
+  return s?.user_id ?? null;
+}
+
+/** מחיקת תלמיד לצמיתות (כולל כל נתוניו, מדורג). */
+export async function deleteStudentAction(formData: FormData): Promise<void> {
+  await requireRole(Role.ADMIN);
+  const uid = await userIdForStudent(Number(formData.get("student_id")));
+  if (!uid) return;
+  await purgeUserById(uid);
+  revalidatePath("/admin");
+  redirect("/admin");
+}
+
+/** העברת תלמיד לארכיון (הפיך — הנתונים נשמרים). */
+export async function archiveStudentAction(formData: FormData): Promise<void> {
+  await requireRole(Role.ADMIN);
+  const uid = await userIdForStudent(Number(formData.get("student_id")));
+  if (!uid) return;
+  await prisma.user.update({
+    where: { id: uid },
+    data: { archived_at: new Date() },
+  });
+  revalidatePath("/admin");
+  redirect("/admin");
+}
+
+/** מחיקת מחנך/אחראי לצמיתות. תלמידי המחנך נשמרים (homeroom_teacher_id -> null). */
+export async function deleteStaffAction(formData: FormData): Promise<void> {
+  await requireRole(Role.ADMIN);
+  const userId = Number(formData.get("user_id"));
+  if (!userId) return;
+  await purgeUserById(userId);
   revalidatePath("/admin/accounts");
   revalidatePath("/admin");
 }
 
-/** מחיקת כל נתוני שכבה שלמה (כל התלמידים בשכבה וכל הנתונים שלהם). */
+/** העברת מחנך/אחראי לארכיון (הפיך). */
+export async function archiveStaffAction(formData: FormData): Promise<void> {
+  await requireRole(Role.ADMIN);
+  const userId = Number(formData.get("user_id"));
+  if (!userId) return;
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || (user.role !== Role.TEACHER && user.role !== Role.SUPERVISOR))
+    return;
+  await prisma.user.update({
+    where: { id: userId },
+    data: { archived_at: new Date() },
+  });
+  revalidatePath("/admin/accounts");
+  revalidatePath("/admin");
+}
+
+/** מחיקת שכבה שלמה לצמיתות (אישור כתוב נדרש). */
 export async function deleteGradeAction(formData: FormData): Promise<void> {
   await requireRole(Role.ADMIN);
   const grade = String(formData.get("grade")) as GradeLevel;
   const confirm = String(formData.get("confirm") ?? "").trim();
   if (grade !== "GRADE_10" && grade !== "GRADE_11") return;
-  // אישור כתוב חייב להתאים לשם השכבה (הגנה כפולה גם בשרת)
   if (confirm !== gradeLabel[grade]) return;
 
   const students = await prisma.student.findMany({
@@ -183,14 +212,26 @@ export async function deleteGradeAction(formData: FormData): Promise<void> {
     select: { user_id: true },
   });
   const userIds = students.map((s) => s.user_id);
-  if (userIds.length > 0) {
+  if (userIds.length > 0)
     await prisma.user.deleteMany({ where: { id: { in: userIds } } });
-  }
   revalidatePath("/admin");
   redirect("/admin/data");
 }
 
-/** מחיקת כל הנתונים פרט לחשבונות המנהלים. */
+/** העברת שכבה שלמה לארכיון (הפיך). */
+export async function archiveGradeAction(formData: FormData): Promise<void> {
+  await requireRole(Role.ADMIN);
+  const grade = String(formData.get("grade")) as GradeLevel;
+  if (grade !== "GRADE_10" && grade !== "GRADE_11") return;
+  await prisma.user.updateMany({
+    where: { student: { grade_level: grade }, archived_at: null },
+    data: { archived_at: new Date() },
+  });
+  revalidatePath("/admin");
+  redirect("/admin/data");
+}
+
+/** מחיקת כל הנתונים פרט לחשבונות המנהלים (אישור כתוב נדרש). */
 export async function deleteAllDataAction(formData: FormData): Promise<void> {
   await requireRole(Role.ADMIN);
   const confirm = String(formData.get("confirm") ?? "").trim();
@@ -202,10 +243,54 @@ export async function deleteAllDataAction(formData: FormData): Promise<void> {
     prisma.reflection.deleteMany(),
     prisma.studentVolunteerPlacement.deleteMany(),
     prisma.volunteerPlace.deleteMany(),
-    // מחיקת כל המשתמשים שאינם מנהלים (תלמידים/מחנכים/אחראים) — מדורג למחיקת Student/Teacher
     prisma.user.deleteMany({ where: { role: { not: Role.ADMIN } } }),
   ]);
-
   revalidatePath("/admin");
   redirect("/admin/data");
+}
+
+/** העברת כל הנתונים לארכיון (הפיך) — כל המשתמשים שאינם מנהלים. */
+export async function archiveAllDataAction(): Promise<void> {
+  await requireRole(Role.ADMIN);
+  await prisma.user.updateMany({
+    where: { role: { not: Role.ADMIN }, archived_at: null },
+    data: { archived_at: new Date() },
+  });
+  revalidatePath("/admin");
+  redirect("/admin/data");
+}
+
+// ----- שחזור / מחיקה מהארכיון -----
+
+/** שחזור פריט מהארכיון. */
+export async function restoreUserAction(formData: FormData): Promise<void> {
+  await requireRole(Role.ADMIN);
+  const userId = Number(formData.get("user_id"));
+  if (!userId) return;
+  await prisma.user.update({
+    where: { id: userId },
+    data: { archived_at: null },
+  });
+  revalidatePath("/admin/archive");
+}
+
+/** מחיקה לצמיתות של פריט מהארכיון. */
+export async function purgeArchivedUserAction(
+  formData: FormData
+): Promise<void> {
+  await requireRole(Role.ADMIN);
+  const userId = Number(formData.get("user_id"));
+  if (!userId) return;
+  await purgeUserById(userId);
+  revalidatePath("/admin/archive");
+}
+
+/** שחזור כל הפריטים מהארכיון. */
+export async function restoreAllArchivedAction(): Promise<void> {
+  await requireRole(Role.ADMIN);
+  await prisma.user.updateMany({
+    where: { archived_at: { not: null } },
+    data: { archived_at: null },
+  });
+  revalidatePath("/admin/archive");
 }

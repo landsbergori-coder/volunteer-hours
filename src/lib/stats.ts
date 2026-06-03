@@ -45,6 +45,7 @@ export type AdminStats = {
 /** מחשב את כל הסטטיסטיקות של מסך המנהל. */
 export async function getAdminStats(): Promise<AdminStats> {
   const students = await prisma.student.findMany({
+    where: { user: { archived_at: null } },
     include: {
       hours: { select: { calculated_hours: true } },
       reflections: { select: { semester: true } },

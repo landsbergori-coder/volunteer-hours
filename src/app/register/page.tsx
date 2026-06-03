@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function RegisterPage() {
   const teachers = await prisma.teacher.findMany({
+    where: { user: { archived_at: null } },
     orderBy: { full_name: "asc" },
     select: { id: true, full_name: true, class_name: true },
   });

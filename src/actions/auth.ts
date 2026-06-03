@@ -31,6 +31,9 @@ export async function loginAction(
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return { ok: false, message: "אימייל או סיסמה שגויים" };
   }
+  if (user.archived_at) {
+    return { ok: false, message: "החשבון אינו פעיל (הועבר לארכיון)" };
+  }
 
   const token = await createSession({
     userId: user.id,

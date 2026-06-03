@@ -34,6 +34,7 @@ model User {
   password_hash        String
   role                 Role
   must_change_password Boolean  @default(false)
+  archived_at          DateTime?
   created_at           DateTime @default(now())
   updated_at           DateTime @updatedAt
 

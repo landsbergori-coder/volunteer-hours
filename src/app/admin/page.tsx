@@ -13,6 +13,7 @@ export default async function AdminDashboard() {
   const stats = await getAdminStats();
 
   const students = await prisma.student.findMany({
+    where: { user: { archived_at: null } },
     include: {
       homeroom_teacher: { select: { full_name: true } },
       hours: { select: { calculated_hours: true } },
