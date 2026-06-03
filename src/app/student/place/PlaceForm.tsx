@@ -60,6 +60,8 @@ export function PlaceForm({ active }: { active: Active }) {
           <label className="label">טלפון סלולרי של האחראי</label>
           <input
             name="supervisor_phone"
+            type="tel"
+            inputMode="tel"
             className="input"
             placeholder="050-1234567"
             defaultValue={active?.supervisor_phone ?? ""}

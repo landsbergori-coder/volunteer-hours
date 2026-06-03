@@ -2,6 +2,7 @@
 
 import { Trash2, Archive } from "lucide-react";
 import { deleteStudentAction, archiveStudentAction } from "@/actions/admin";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 /** פעולות מסוכנות לכרטיס תלמיד: ארכיון (הפיך) או מחיקה לצמיתות. */
 export function DeleteStudentButton({
@@ -13,29 +14,28 @@ export function DeleteStudentButton({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <form action={archiveStudentAction}>
-        <input type="hidden" name="student_id" value={studentId} />
-        <button type="submit" className="btn-secondary">
-          <Archive size={16} /> העברה לארכיון
-        </button>
-      </form>
-
-      <form
-        action={deleteStudentAction}
-        onSubmit={(e) => {
-          if (
-            !confirm(
-              `למחוק לצמיתות את ${name} ואת כל הנתונים (שעות, רפלקציות, הערכות)?\nפעולה זו אינה הפיכה. לשמירת אפשרות שחזור — השתמש/י בארכיון.`
-            )
-          )
-            e.preventDefault();
-        }}
+      <ConfirmButton
+        action={archiveStudentAction}
+        hidden={{ student_id: String(studentId) }}
+        className="btn-secondary"
+        tone="primary"
+        title="העברה לארכיון"
+        message={`להעביר את ${name} לארכיון? הנתונים יישמרו וניתן לשחזר בכל עת ממסך הארכיון.`}
+        confirmLabel="העברה לארכיון"
       >
-        <input type="hidden" name="student_id" value={studentId} />
-        <button type="submit" className="btn-danger">
-          <Trash2 size={16} /> מחיקה לצמיתות
-        </button>
-      </form>
+        <Archive size={16} /> העברה לארכיון
+      </ConfirmButton>
+
+      <ConfirmButton
+        action={deleteStudentAction}
+        hidden={{ student_id: String(studentId) }}
+        className="btn-danger"
+        title="מחיקה לצמיתות"
+        message={`למחוק לצמיתות את ${name} ואת כל הנתונים (שעות, רפלקציות, הערכות)?\nפעולה זו אינה הפיכה. לשמירת אפשרות שחזור — השתמש/י בארכיון.`}
+        confirmLabel="מחיקה לצמיתות"
+      >
+        <Trash2 size={16} /> מחיקה לצמיתות
+      </ConfirmButton>
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import { ReactNode } from "react";
-import Link from "next/link";
 import { LogOut, HeartHandshake } from "lucide-react";
 import { roleLabel } from "@/lib/validation";
 import { Role } from "@prisma/client";
+import { NavLinks, NavLinksMobile, type NavLink } from "@/components/NavLinks";
+import { FlashToast } from "@/components/FlashToast";
 
-export type NavLink = { href: string; label: string };
+export type { NavLink };
 
 export function Shell({
   name,
@@ -19,6 +20,7 @@ export function Shell({
 }) {
   return (
     <div className="min-h-screen">
+      <FlashToast />
       <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-2">
@@ -31,17 +33,7 @@ export function Shell({
             </div>
           </div>
 
-          <nav className="hidden items-center gap-1 md:flex">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
+          <NavLinks links={links} />
 
           <div className="flex items-center gap-3">
             <div className="text-left">
@@ -51,8 +43,9 @@ export function Shell({
             <form action="/api/logout" method="post">
               <button
                 type="submit"
+                aria-label="התנתקות"
                 title="התנתקות"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-red-600"
+                className="icon-btn hover:text-red-600"
               >
                 <LogOut size={18} />
               </button>
@@ -60,19 +53,7 @@ export function Shell({
           </div>
         </div>
 
-        {links.length > 0 && (
-          <nav className="flex items-center gap-1 overflow-x-auto border-t border-gray-100 px-4 py-2 md:hidden">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-        )}
+        <NavLinksMobile links={links} />
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>

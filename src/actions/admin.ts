@@ -104,7 +104,7 @@ export async function resetAdminPasswordAction(
     where: { id, role: Role.ADMIN },
     data: { password_hash, must_change_password: true },
   });
-  revalidatePath("/admin/admins");
+  redirect(flash("/admin/admins", "הסיסמה אופסה — המנהל יחליף בכניסה הבאה"));
 }
 
 /** מחיקת מנהל. אסור למחוק את עצמך או את המנהל האחרון שנותר. */
@@ -115,10 +115,15 @@ export async function deleteAdminAction(formData: FormData): Promise<void> {
   const adminCount = await prisma.user.count({ where: { role: Role.ADMIN } });
   if (adminCount <= 1) return; // חייב להישאר לפחות מנהל אחד
   await prisma.user.deleteMany({ where: { id, role: Role.ADMIN } });
-  revalidatePath("/admin/admins");
+  redirect(flash("/admin/admins", "המנהל נמחק"));
 }
 
 // ----- מחיקה / ארכיון של נתונים -----
+
+/** בונה נתיב עם פרמטר flash להצגת Toast לאחר redirect. */
+function flash(path: string, msg: string): string {
+  return `${path}?flash=${encodeURIComponent(msg)}`;
+}
 
 /**
  * מחיקה לצמיתות של משתמש (לפי תפקיד). מחיקת ה-User מפעילה מחיקה מדורגת.
@@ -157,7 +162,7 @@ export async function deleteStudentAction(formData: FormData): Promise<void> {
   if (!uid) return;
   await purgeUserById(uid);
   revalidatePath("/admin");
-  redirect("/admin");
+  redirect(flash("/admin", "התלמיד/ה נמחק/ה לצמיתות"));
 }
 
 /** העברת תלמיד לארכיון (הפיך — הנתונים נשמרים). */
@@ -170,7 +175,7 @@ export async function archiveStudentAction(formData: FormData): Promise<void> {
     data: { archived_at: new Date() },
   });
   revalidatePath("/admin");
-  redirect("/admin");
+  redirect(flash("/admin", "התלמיד/ה הועבר/ה לארכיון"));
 }
 
 /** מחיקת מחנך/אחראי לצמיתות. תלמידי המחנך נשמרים (homeroom_teacher_id -> null). */
@@ -179,8 +184,8 @@ export async function deleteStaffAction(formData: FormData): Promise<void> {
   const userId = Number(formData.get("user_id"));
   if (!userId) return;
   await purgeUserById(userId);
-  revalidatePath("/admin/accounts");
   revalidatePath("/admin");
+  redirect(flash("/admin/accounts", "החשבון נמחק לצמיתות"));
 }
 
 /** העברת מחנך/אחראי לארכיון (הפיך). */
@@ -195,8 +200,8 @@ export async function archiveStaffAction(formData: FormData): Promise<void> {
     where: { id: userId },
     data: { archived_at: new Date() },
   });
-  revalidatePath("/admin/accounts");
   revalidatePath("/admin");
+  redirect(flash("/admin/accounts", "החשבון הועבר לארכיון"));
 }
 
 /** מחיקת שכבה שלמה לצמיתות (אישור כתוב נדרש). */
@@ -215,7 +220,7 @@ export async function deleteGradeAction(formData: FormData): Promise<void> {
   if (userIds.length > 0)
     await prisma.user.deleteMany({ where: { id: { in: userIds } } });
   revalidatePath("/admin");
-  redirect("/admin/data");
+  redirect(flash("/admin/data", `שכבה ${gradeLabel[grade]} נמחקה לצמיתות`));
 }
 
 /** העברת שכבה שלמה לארכיון (הפיך). */
@@ -228,7 +233,7 @@ export async function archiveGradeAction(formData: FormData): Promise<void> {
     data: { archived_at: new Date() },
   });
   revalidatePath("/admin");
-  redirect("/admin/data");
+  redirect(flash("/admin/data", `שכבה ${gradeLabel[grade]} הועברה לארכיון`));
 }
 
 /** מחיקת כל הנתונים פרט לחשבונות המנהלים (אישור כתוב נדרש). */
@@ -246,7 +251,7 @@ export async function deleteAllDataAction(formData: FormData): Promise<void> {
     prisma.user.deleteMany({ where: { role: { not: Role.ADMIN } } }),
   ]);
   revalidatePath("/admin");
-  redirect("/admin/data");
+  redirect(flash("/admin/data", "כל הנתונים נמחקו לצמיתות"));
 }
 
 /** העברת כל הנתונים לארכיון (הפיך) — כל המשתמשים שאינם מנהלים. */
@@ -257,7 +262,7 @@ export async function archiveAllDataAction(): Promise<void> {
     data: { archived_at: new Date() },
   });
   revalidatePath("/admin");
-  redirect("/admin/data");
+  redirect(flash("/admin/data", "כל הנתונים הועברו לארכיון"));
 }
 
 // ----- שחזור / מחיקה מהארכיון -----
@@ -271,7 +276,7 @@ export async function restoreUserAction(formData: FormData): Promise<void> {
     where: { id: userId },
     data: { archived_at: null },
   });
-  revalidatePath("/admin/archive");
+  redirect(flash("/admin/archive", "הפריט שוחזר בהצלחה"));
 }
 
 /** מחיקה לצמיתות של פריט מהארכיון. */
@@ -282,7 +287,7 @@ export async function purgeArchivedUserAction(
   const userId = Number(formData.get("user_id"));
   if (!userId) return;
   await purgeUserById(userId);
-  revalidatePath("/admin/archive");
+  redirect(flash("/admin/archive", "הפריט נמחק לצמיתות"));
 }
 
 /** שחזור כל הפריטים מהארכיון. */
@@ -292,5 +297,5 @@ export async function restoreAllArchivedAction(): Promise<void> {
     where: { archived_at: { not: null } },
     data: { archived_at: null },
   });
-  revalidatePath("/admin/archive");
+  redirect(flash("/admin/archive", "כל הפריטים שוחזרו"));
 }

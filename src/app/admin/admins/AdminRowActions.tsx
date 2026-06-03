@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { KeyRound, Trash2, X } from "lucide-react";
 import { resetAdminPasswordAction, deleteAdminAction } from "@/actions/admin";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 export function AdminRowActions({
   id,
@@ -56,24 +57,26 @@ export function AdminRowActions({
 
       {isSelf ? (
         <span className="text-xs text-gray-400">(אתה)</span>
-      ) : (
-        <form
+      ) : canDelete ? (
+        <ConfirmButton
           action={deleteAdminAction}
-          onSubmit={(e) => {
-            if (!confirm(`למחוק את המנהל ${name}? פעולה זו אינה הפיכה.`))
-              e.preventDefault();
-          }}
+          hidden={{ id: String(id) }}
+          className="icon-btn hover:text-red-600"
+          title="מחיקת מנהל"
+          message={`למחוק את המנהל ${name}? פעולה זו אינה הפיכה.`}
+          confirmLabel="מחיקה"
         >
-          <input type="hidden" name="id" value={id} />
-          <button
-            type="submit"
-            disabled={!canDelete}
-            title={canDelete ? "מחיקת מנהל" : "חייב להישאר לפחות מנהל אחד"}
-            className="text-gray-400 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <Trash2 size={16} />
-          </button>
-        </form>
+          <Trash2 size={16} />
+        </ConfirmButton>
+      ) : (
+        <button
+          type="button"
+          disabled
+          title="חייב להישאר לפחות מנהל אחד"
+          className="icon-btn opacity-40 cursor-not-allowed"
+        >
+          <Trash2 size={16} />
+        </button>
       )}
     </div>
   );

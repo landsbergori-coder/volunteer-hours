@@ -2,18 +2,19 @@
 
 import { RotateCcw } from "lucide-react";
 import { restoreAllArchivedAction } from "@/actions/admin";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 export function RestoreAllButton() {
   return (
-    <form
+    <ConfirmButton
       action={restoreAllArchivedAction}
-      onSubmit={(e) => {
-        if (!confirm("לשחזר את כל הפריטים מהארכיון?")) e.preventDefault();
-      }}
+      className="btn-secondary"
+      tone="primary"
+      title="שחזור הכל"
+      message="לשחזר את כל הפריטים מהארכיון?"
+      confirmLabel="שחזור הכל"
     >
-      <button type="submit" className="btn-secondary">
-        <RotateCcw size={16} /> שחזור הכל
-      </button>
-    </form>
+      <RotateCcw size={16} /> שחזור הכל
+    </ConfirmButton>
   );
 }

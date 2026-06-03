@@ -92,7 +92,16 @@ export default async function StudentDashboard() {
             דיווחי שעות אחרונים
           </SectionTitle>
           {recent.length === 0 ? (
-            <EmptyState>עדיין לא דיווחת שעות התנדבות.</EmptyState>
+            <EmptyState>
+              <div className="space-y-3">
+                <p>עדיין לא דיווחת שעות התנדבות.</p>
+                {active && (
+                  <Link href="/student/hours" className="btn-primary">
+                    <Plus size={16} /> דיווח שעות ראשון
+                  </Link>
+                )}
+              </div>
+            </EmptyState>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-right text-sm">

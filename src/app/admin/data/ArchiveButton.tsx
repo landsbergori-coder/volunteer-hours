@@ -1,8 +1,9 @@
 "use client";
 
 import { Archive } from "lucide-react";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
-/** כפתור ארכוב (הפיך) עם אישור פשוט. */
+/** כפתור ארכוב (הפיך) עם מודאל אישור מעוצב. */
 export function ArchiveButton({
   action,
   hidden,
@@ -15,19 +16,16 @@ export function ArchiveButton({
   confirmMessage: string;
 }) {
   return (
-    <form
+    <ConfirmButton
       action={action}
-      onSubmit={(e) => {
-        if (!confirm(confirmMessage)) e.preventDefault();
-      }}
+      hidden={hidden}
+      className="btn-secondary w-full"
+      tone="primary"
+      title="העברה לארכיון"
+      message={confirmMessage}
+      confirmLabel="העברה לארכיון"
     >
-      {hidden &&
-        Object.entries(hidden).map(([k, v]) => (
-          <input key={k} type="hidden" name={k} value={v} />
-        ))}
-      <button type="submit" className="btn-secondary w-full">
-        <Archive size={16} /> {label}
-      </button>
-    </form>
+      <Archive size={16} /> {label}
+    </ConfirmButton>
   );
 }

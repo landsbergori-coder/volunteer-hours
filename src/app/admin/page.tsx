@@ -6,6 +6,7 @@ import { formatHours } from "@/lib/hours";
 import { Role } from "@prisma/client";
 import { Users, Clock, MapPin, TrendingUp, FileSpreadsheet } from "lucide-react";
 import { gradeLabel } from "@/lib/validation";
+import { Tabs } from "@/components/Tabs";
 import { AdminStudentsTable, AdminRow } from "./AdminStudentsTable";
 
 export default async function AdminDashboard() {
@@ -77,98 +78,117 @@ export default async function AdminDashboard() {
         </div>
       </Card>
 
-      <Card>
-        <SectionTitle>כל התלמידים</SectionTitle>
-        <AdminStudentsTable rows={rows} />
-      </Card>
+      <Tabs
+        tabs={[
+          {
+            id: "students",
+            label: "כל התלמידים",
+            content: (
+              <Card>
+                <AdminStudentsTable rows={rows} />
+              </Card>
+            ),
+          },
+          {
+            id: "stats",
+            label: "סטטיסטיקות",
+            content: (
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <Card>
+                  <SectionTitle>ממוצע שעות לפי כיתה</SectionTitle>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-right text-sm">
+                      <thead className="text-xs text-gray-500">
+                        <tr className="border-b">
+                          <th className="py-2 font-medium">כיתה</th>
+                          <th className="py-2 font-medium">תלמידים</th>
+                          <th className="py-2 font-medium">סך שעות</th>
+                          <th className="py-2 font-medium">ממוצע לתלמיד</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stats.classStats.map((c) => (
+                          <tr key={c.class_name} className="border-b last:border-0">
+                            <td className="py-2 font-medium">{c.class_name}</td>
+                            <td className="py-2">{c.studentCount}</td>
+                            <td className="py-2">{formatHours(c.totalHours)}</td>
+                            <td className="py-2 font-semibold">{formatHours(c.avgHours)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <SectionTitle>ממוצע שעות לפי כיתה</SectionTitle>
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm">
-              <thead className="text-xs text-gray-500">
-                <tr className="border-b">
-                  <th className="py-2 font-medium">כיתה</th>
-                  <th className="py-2 font-medium">תלמידים</th>
-                  <th className="py-2 font-medium">סך שעות</th>
-                  <th className="py-2 font-medium">ממוצע לתלמיד</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.classStats.map((c) => (
-                  <tr key={c.class_name} className="border-b last:border-0">
-                    <td className="py-2 font-medium">{c.class_name}</td>
-                    <td className="py-2">{c.studentCount}</td>
-                    <td className="py-2">{formatHours(c.totalHours)}</td>
-                    <td className="py-2 font-semibold">{formatHours(c.avgHours)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                <Card>
+                  <SectionTitle>מקומות התנדבות ומספר מתנדבים</SectionTitle>
+                  {stats.placeStats.length === 0 ? (
+                    <EmptyState>אין מקומות התנדבות פעילים.</EmptyState>
+                  ) : (
+                    <ul className="space-y-2 text-sm">
+                      {stats.placeStats.map((p) => (
+                        <li key={p.place_name} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
+                          <span>{p.place_name}</span>
+                          <Badge tone="blue">{p.studentCount} תלמידים</Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Card>
+              </div>
+            ),
+          },
+          {
+            id: "missing",
+            label: `מעקב חוסרים (${stats.studentsWithoutHours.length + stats.studentsWithoutReflection.length})`,
+            content: (
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <Card>
+                  <SectionTitle>
+                    <span className="flex items-center gap-2">
+                      תלמידים ללא דיווח שעות
+                      <Badge tone="red">{stats.studentsWithoutHours.length}</Badge>
+                    </span>
+                  </SectionTitle>
+                  {stats.studentsWithoutHours.length === 0 ? (
+                    <EmptyState>כל התלמידים דיווחו שעות.</EmptyState>
+                  ) : (
+                    <ul className="space-y-1 text-sm">
+                      {stats.studentsWithoutHours.map((s) => (
+                        <li key={s.id} className="flex justify-between border-b py-1.5 last:border-0">
+                          <span>{s.name}</span>
+                          <span className="text-gray-400">{s.class_name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Card>
 
-        <Card>
-          <SectionTitle>מקומות התנדבות ומספר מתנדבים</SectionTitle>
-          {stats.placeStats.length === 0 ? (
-            <EmptyState>אין מקומות התנדבות פעילים.</EmptyState>
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {stats.placeStats.map((p) => (
-                <li key={p.place_name} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
-                  <span>{p.place_name}</span>
-                  <Badge tone="blue">{p.studentCount} תלמידים</Badge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <SectionTitle>
-            <span className="flex items-center gap-2">
-              תלמידים ללא דיווח שעות
-              <Badge tone="red">{stats.studentsWithoutHours.length}</Badge>
-            </span>
-          </SectionTitle>
-          {stats.studentsWithoutHours.length === 0 ? (
-            <EmptyState>כל התלמידים דיווחו שעות. 🎉</EmptyState>
-          ) : (
-            <ul className="space-y-1 text-sm">
-              {stats.studentsWithoutHours.map((s) => (
-                <li key={s.id} className="flex justify-between border-b py-1.5 last:border-0">
-                  <span>{s.name}</span>
-                  <span className="text-gray-400">{s.class_name}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        <Card>
-          <SectionTitle>
-            <span className="flex items-center gap-2">
-              תלמידים ללא רפלקציה
-              <Badge tone="amber">{stats.studentsWithoutReflection.length}</Badge>
-            </span>
-          </SectionTitle>
-          {stats.studentsWithoutReflection.length === 0 ? (
-            <EmptyState>כל התלמידים מילאו רפלקציות. 🎉</EmptyState>
-          ) : (
-            <ul className="space-y-1 text-sm">
-              {stats.studentsWithoutReflection.map((s) => (
-                <li key={s.id} className="flex justify-between border-b py-1.5 last:border-0">
-                  <span>{s.name} <span className="text-gray-400">({s.class_name})</span></span>
-                  <span className="text-amber-600">חסר: {s.missing}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
+                <Card>
+                  <SectionTitle>
+                    <span className="flex items-center gap-2">
+                      תלמידים ללא רפלקציה
+                      <Badge tone="amber">{stats.studentsWithoutReflection.length}</Badge>
+                    </span>
+                  </SectionTitle>
+                  {stats.studentsWithoutReflection.length === 0 ? (
+                    <EmptyState>כל התלמידים מילאו רפלקציות.</EmptyState>
+                  ) : (
+                    <ul className="space-y-1 text-sm">
+                      {stats.studentsWithoutReflection.map((s) => (
+                        <li key={s.id} className="flex justify-between border-b py-1.5 last:border-0">
+                          <span>{s.name} <span className="text-gray-400">({s.class_name})</span></span>
+                          <span className="text-amber-600">חסר: {s.missing}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Card>
+              </div>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }

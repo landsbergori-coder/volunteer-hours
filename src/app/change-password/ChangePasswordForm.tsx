@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { changePasswordAction } from "@/actions/auth";
 import { initialActionState } from "@/lib/form";
 import { SubmitButton } from "@/components/SubmitButton";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Alert } from "@/components/ui";
 
 function Err({ msg }: { msg?: string }) {
@@ -23,20 +24,20 @@ export function ChangePasswordForm() {
       {!state.ok && <Alert ok={false}>{state.message}</Alert>}
 
       <div>
-        <label className="label">סיסמה נוכחית</label>
-        <input name="current_password" type="password" className="input" autoComplete="current-password" />
+        <label className="label" htmlFor="current_password">סיסמה נוכחית</label>
+        <PasswordInput id="current_password" name="current_password" autoComplete="current-password" />
         <Err msg={e.current_password} />
       </div>
 
       <div>
-        <label className="label">סיסמה חדשה</label>
-        <input name="new_password" type="password" className="input" autoComplete="new-password" />
+        <label className="label" htmlFor="new_password">סיסמה חדשה</label>
+        <PasswordInput id="new_password" name="new_password" autoComplete="new-password" />
         <Err msg={e.new_password} />
       </div>
 
       <div>
-        <label className="label">אישור סיסמה חדשה</label>
-        <input name="confirm_password" type="password" className="input" autoComplete="new-password" />
+        <label className="label" htmlFor="confirm_password">אישור סיסמה חדשה</label>
+        <PasswordInput id="confirm_password" name="confirm_password" autoComplete="new-password" />
         <Err msg={e.confirm_password} />
       </div>
 

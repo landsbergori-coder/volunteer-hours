@@ -2,6 +2,7 @@
 
 import { Trash2, Archive } from "lucide-react";
 import { deleteStaffAction, archiveStaffAction } from "@/actions/admin";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 export function DeleteStaffButton({
   userId,
@@ -17,37 +18,28 @@ export function DeleteStaffButton({
       ? `\n${studentCount} תלמידים יישארו ללא מחנך/ת (הנתונים שלהם יישמרו).`
       : "";
   return (
-    <div className="flex items-center justify-end gap-2">
-      <form action={archiveStaffAction}>
-        <input type="hidden" name="user_id" value={userId} />
-        <button
-          type="submit"
-          title="העברה לארכיון (הפיך)"
-          className="text-gray-400 hover:text-amber-600"
-        >
-          <Archive size={16} />
-        </button>
-      </form>
-      <form
-        action={deleteStaffAction}
-        onSubmit={(e) => {
-          if (
-            !confirm(
-              `למחוק לצמיתות את ${name}?${warn}\nפעולה זו אינה הפיכה. לשמירת אפשרות שחזור — השתמש/י בארכיון.`
-            )
-          )
-            e.preventDefault();
-        }}
+    <div className="flex items-center justify-end gap-1">
+      <ConfirmButton
+        action={archiveStaffAction}
+        hidden={{ user_id: String(userId) }}
+        className="icon-btn hover:text-amber-600"
+        tone="primary"
+        title="העברה לארכיון"
+        message={`להעביר את ${name} לארכיון? ניתן לשחזר בכל עת.`}
+        confirmLabel="העברה לארכיון"
       >
-        <input type="hidden" name="user_id" value={userId} />
-        <button
-          type="submit"
-          title="מחיקה לצמיתות"
-          className="text-gray-400 hover:text-red-600"
-        >
-          <Trash2 size={16} />
-        </button>
-      </form>
+        <Archive size={16} />
+      </ConfirmButton>
+      <ConfirmButton
+        action={deleteStaffAction}
+        hidden={{ user_id: String(userId) }}
+        className="icon-btn hover:text-red-600"
+        title="מחיקה לצמיתות"
+        message={`למחוק לצמיתות את ${name}?${warn}\nפעולה זו אינה הפיכה. לשמירת אפשרות שחזור — השתמש/י בארכיון.`}
+        confirmLabel="מחיקה לצמיתות"
+      >
+        <Trash2 size={16} />
+      </ConfirmButton>
     </div>
   );
 }

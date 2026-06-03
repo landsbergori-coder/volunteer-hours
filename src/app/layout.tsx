@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Heebo } from "next/font/google";
 import "./globals.css";
 
@@ -11,6 +11,12 @@ const heebo = Heebo({
 export const metadata: Metadata = {
   title: "מחויבות אישית — ניהול שעות התנדבות",
   description: "מערכת לניהול ורישום שעות התנדבות לתלמידי שכבות י' ו-י\"א",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

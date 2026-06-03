@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { registerStudentAction } from "@/actions/auth";
 import { initialActionState } from "@/lib/form";
 import { SubmitButton } from "@/components/SubmitButton";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Alert } from "@/components/ui";
 
 type Teacher = { id: number; full_name: string; class_name: string };
@@ -85,13 +86,13 @@ export function RegisterForm({ teachers }: { teachers: Teacher[] }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="label">סיסמה</label>
-          <input name="password" type="password" className="input" />
+          <label className="label" htmlFor="password">סיסמה</label>
+          <PasswordInput id="password" name="password" autoComplete="new-password" />
           <Err msg={e.password} />
         </div>
         <div>
-          <label className="label">אישור סיסמה</label>
-          <input name="confirm_password" type="password" className="input" />
+          <label className="label" htmlFor="confirm_password">אישור סיסמה</label>
+          <PasswordInput id="confirm_password" name="confirm_password" autoComplete="new-password" />
           <Err msg={e.confirm_password} />
         </div>
       </div>

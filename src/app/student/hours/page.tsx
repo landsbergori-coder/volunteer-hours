@@ -11,6 +11,7 @@ import { formatDate } from "@/lib/format";
 import { Role } from "@prisma/client";
 import { HoursForm } from "./HoursForm";
 import { deleteHoursAction } from "@/actions/student";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import { Trash2 } from "lucide-react";
 
 export default async function StudentHoursPage() {
@@ -76,16 +77,16 @@ export default async function StudentHoursPage() {
                         {h.description || "—"}
                       </td>
                       <td className="py-2">
-                        <form action={deleteHoursAction}>
-                          <input type="hidden" name="id" value={h.id} />
-                          <button
-                            type="submit"
-                            title="מחיקה"
-                            className="text-gray-400 hover:text-red-600"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </form>
+                        <ConfirmButton
+                          action={deleteHoursAction}
+                          hidden={{ id: String(h.id) }}
+                          className="icon-btn hover:text-red-600"
+                          title="מחיקת דיווח"
+                          message={`למחוק את הדיווח מתאריך ${formatDate(h.volunteer_date)} (${formatHours(h.calculated_hours)} שעות)?`}
+                          confirmLabel="מחיקה"
+                        >
+                          <Trash2 size={16} />
+                        </ConfirmButton>
                       </td>
                     </tr>
                   ))}

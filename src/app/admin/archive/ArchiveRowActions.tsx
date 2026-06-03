@@ -2,6 +2,7 @@
 
 import { RotateCcw, Trash2 } from "lucide-react";
 import { restoreUserAction, purgeArchivedUserAction } from "@/actions/admin";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 export function ArchiveRowActions({
   userId,
@@ -16,31 +17,21 @@ export function ArchiveRowActions({
         <input type="hidden" name="user_id" value={userId} />
         <button
           type="submit"
-          className="inline-flex items-center gap-1 text-sm text-brand-600 hover:underline"
+          className="inline-flex items-center gap-1 rounded-md px-1 py-1 text-sm text-brand-600 hover:underline"
         >
           <RotateCcw size={15} /> שחזור
         </button>
       </form>
-      <form
+      <ConfirmButton
         action={purgeArchivedUserAction}
-        onSubmit={(e) => {
-          if (
-            !confirm(
-              `למחוק לצמיתות את ${name}? פעולה זו אינה הפיכה וכל הנתונים יימחקו.`
-            )
-          )
-            e.preventDefault();
-        }}
+        hidden={{ user_id: String(userId) }}
+        className="inline-flex items-center gap-1 rounded-md px-1 py-1 text-sm text-gray-400 hover:text-red-600 cursor-pointer"
+        title="מחיקה לצמיתות"
+        message={`למחוק לצמיתות את ${name}? פעולה זו אינה הפיכה וכל הנתונים יימחקו.`}
+        confirmLabel="מחיקה לצמיתות"
       >
-        <input type="hidden" name="user_id" value={userId} />
-        <button
-          type="submit"
-          title="מחיקה לצמיתות"
-          className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-red-600"
-        >
-          <Trash2 size={15} /> מחיקה לצמיתות
-        </button>
-      </form>
+        <Trash2 size={15} /> מחיקה לצמיתות
+      </ConfirmButton>
     </div>
   );
 }

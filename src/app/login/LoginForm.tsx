@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { loginAction } from "@/actions/auth";
 import { initialActionState } from "@/lib/form";
 import { SubmitButton } from "@/components/SubmitButton";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Alert } from "@/components/ui";
 
 export function LoginForm() {
@@ -34,12 +35,10 @@ export function LoginForm() {
         <label className="label" htmlFor="password">
           סיסמה
         </label>
-        <input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
-          className="input"
           placeholder="••••••"
         />
         {state.errors?.password && (
