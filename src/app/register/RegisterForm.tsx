@@ -53,6 +53,7 @@ export function RegisterForm({ teachers }: { teachers: Teacher[] }) {
             </option>
             <option value="GRADE_10">י'</option>
             <option value="GRADE_11">י&quot;א</option>
+            <option value="GRADE_12">י&quot;ב</option>
           </select>
           <Err msg={e.grade_level} />
         </div>

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { calculateHours, isValidVolunteerDate } from "@/lib/hours";
@@ -57,6 +58,7 @@ export async function addHoursAction(
       start_time: d.start_time,
       end_time: d.end_time,
       calculated_hours: calc.hours,
+      grade_level: student.grade_level, // תיוג השעה לשכבה הנוכחית
       description: d.description || null,
     },
   });
@@ -162,4 +164,32 @@ export async function saveReflectionAction(
   revalidatePath("/student");
   revalidatePath("/student/reflection");
   return { ok: true, message: "הרפלקציה נשמרה בהצלחה" };
+}
+
+/** הרשמה למסלול בגרות חברתית (לתלמידי י"ב בלבד). */
+export async function registerBagrutAction(): Promise<void> {
+  const student = await getCurrentStudent();
+  if (student.grade_level !== "GRADE_12") return;
+  await prisma.student.update({
+    where: { id: student.id },
+    data: { bagrut_track: true },
+  });
+  revalidatePath("/student");
+}
+
+/**
+ * תשובת התלמיד לאחר העברת שנה: שמירה על המקום הקיים או מעבר לעדכון מקום.
+ * בכל מקרה מנקה את דגל הבקשה.
+ */
+export async function resolvePlacementReviewAction(
+  formData: FormData
+): Promise<void> {
+  const student = await getCurrentStudent();
+  const keep = formData.get("keep") === "1";
+  await prisma.student.update({
+    where: { id: student.id },
+    data: { needs_placement_review: false },
+  });
+  revalidatePath("/student");
+  if (!keep) redirect("/student/place");
 }

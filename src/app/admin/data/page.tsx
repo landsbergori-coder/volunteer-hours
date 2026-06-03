@@ -11,21 +11,25 @@ import {
 } from "@/actions/admin";
 import { ConfirmDeleteForm } from "./ConfirmDeleteForm";
 import { ArchiveButton } from "./ArchiveButton";
+import { YearAdvanceButton } from "./YearAdvanceButton";
 import { Role } from "@prisma/client";
-import { AlertTriangle, Archive } from "lucide-react";
+import { AlertTriangle, Archive, CalendarClock } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function DataManagementPage() {
   await requireRole(Role.ADMIN);
 
-  const [g10, g11, totalStudents, totalHours, archivedCount] =
+  const [g10, g11, g12, totalStudents, totalHours, archivedCount] =
     await Promise.all([
       prisma.student.count({
         where: { grade_level: "GRADE_10", user: { archived_at: null } },
       }),
       prisma.student.count({
         where: { grade_level: "GRADE_11", user: { archived_at: null } },
+      }),
+      prisma.student.count({
+        where: { grade_level: "GRADE_12", user: { archived_at: null } },
       }),
       prisma.student.count({ where: { user: { archived_at: null } } }),
       prisma.volunteerHours.count(),
@@ -67,6 +71,29 @@ export default async function DataManagementPage() {
         <Link href="/admin/archive" className="btn-secondary">
           <Archive size={16} /> פתיחת הארכיון (שחזור / מחיקה)
         </Link>
+      </Card>
+
+      <Card>
+        <SectionTitle>
+          <span className="flex items-center gap-2">
+            <CalendarClock size={18} /> העברת שנה
+          </span>
+        </SectionTitle>
+        <p className="mb-1 text-sm text-gray-500">
+          מעביר את כל התלמידים שנה קדימה. השעות שכל תלמיד צבר נשמרות במלואן
+          ומשויכות לשכבה שבה בוצעו.
+        </p>
+        <ul className="mb-4 mr-4 list-disc text-sm text-gray-600">
+          <li>שכבה {gradeLabel.GRADE_10} → {gradeLabel.GRADE_11} ({g10} תלמידים)</li>
+          <li>שכבה {gradeLabel.GRADE_11} → {gradeLabel.GRADE_12} ({g11} תלמידים)</li>
+          <li>שכבה {gradeLabel.GRADE_12} → ארכיון ({g12} תלמידים)</li>
+        </ul>
+        <p className="mb-4 text-xs text-gray-400">
+          לאחר ההעברה, בכניסה הבאה כל תלמיד יתבקש לאשר או לעדכן את מקום ההתנדבות שלו.
+        </p>
+        <div className="max-w-md">
+          <YearAdvanceButton />
+        </div>
       </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -121,6 +148,27 @@ export default async function DataManagementPage() {
                 expected={gradeLabel.GRADE_11}
                 hidden={{ grade: "GRADE_11" }}
                 buttonLabel={`מחיקת כל שכבה ${gradeLabel.GRADE_11} לצמיתות`}
+              />
+            </div>
+
+            <div className="rounded-xl border border-gray-100 p-4">
+              <div className="mb-2 font-medium">
+                שכבה {gradeLabel.GRADE_12}{" "}
+                <span className="text-sm text-gray-400">({g12} תלמידים)</span>
+              </div>
+              <div className="mb-3">
+                <ArchiveButton
+                  action={archiveGradeAction}
+                  hidden={{ grade: "GRADE_12" }}
+                  label={`העברת שכבה ${gradeLabel.GRADE_12} לארכיון`}
+                  confirmMessage={`להעביר את כל שכבה ${gradeLabel.GRADE_12} לארכיון? ניתן לשחזר בהמשך.`}
+                />
+              </div>
+              <ConfirmDeleteForm
+                action={deleteGradeAction}
+                expected={gradeLabel.GRADE_12}
+                hidden={{ grade: "GRADE_12" }}
+                buttonLabel={`מחיקת כל שכבה ${gradeLabel.GRADE_12} לצמיתות`}
               />
             </div>
           </div>

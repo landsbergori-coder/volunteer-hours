@@ -265,6 +265,37 @@ export async function archiveAllDataAction(): Promise<void> {
   redirect(flash("/admin/data", "כל הנתונים הועברו לארכיון"));
 }
 
+/**
+ * העברת שנה: י' → י"א, י"א → י"ב, י"ב → ארכיון. השעות נשמרות.
+ * המקודמים מסומנים לעדכון מקום התנדבות בכניסה הבאה.
+ */
+export async function advanceYearAction(formData: FormData): Promise<void> {
+  await requireRole(Role.ADMIN);
+  const confirm = String(formData.get("confirm") ?? "").trim();
+  if (confirm !== "העבר שנה") return;
+
+  await prisma.$transaction([
+    // 1. ארכוב תלמידי י"ב הנוכחיים
+    prisma.user.updateMany({
+      where: { archived_at: null, student: { grade_level: "GRADE_12" } },
+      data: { archived_at: new Date() },
+    }),
+    // 2. י"א → י"ב
+    prisma.student.updateMany({
+      where: { grade_level: "GRADE_11" },
+      data: { grade_level: "GRADE_12", needs_placement_review: true },
+    }),
+    // 3. י' → י"א
+    prisma.student.updateMany({
+      where: { grade_level: "GRADE_10" },
+      data: { grade_level: "GRADE_11", needs_placement_review: true },
+    }),
+  ]);
+
+  revalidatePath("/admin");
+  redirect(flash("/admin/data", "העברת השנה בוצעה בהצלחה"));
+}
+
 // ----- שחזור / מחיקה מהארכיון -----
 
 /** שחזור פריט מהארכיון. */

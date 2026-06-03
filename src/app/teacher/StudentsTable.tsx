@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Search, Eye, ChevronLeft } from "lucide-react";
 import { Badge, EmptyState } from "@/components/ui";
 import { Avatar } from "@/components/Avatar";
+import { ProgressBar } from "@/components/ProgressBar";
+import { BagrutTrophy } from "@/components/BagrutTrophy";
 import { formatHours } from "@/lib/hours";
 
 export type TeacherRow = {
@@ -17,6 +19,9 @@ export type TeacherRow = {
   supervisorPhone: string | null;
   supervisorEmail: string | null;
   totalHours: number;
+  gradeDone: number;
+  gradeTarget: number | null;
+  bagrutEligible: boolean;
   reflA: boolean;
   reflB: boolean;
 };
@@ -104,6 +109,7 @@ export function StudentsTable({
                   <th className="py-2 font-medium">מקום התנדבות</th>
                   <th className="py-2 font-medium">אחראי</th>
                   <th className="py-2 font-medium">שעות</th>
+                  <th className="py-2 font-medium">התקדמות (שכבה)</th>
                   <th className="py-2 font-medium">מחצית א&apos;</th>
                   <th className="py-2 font-medium">מחצית ב&apos;</th>
                   <th className="py-2"></th>
@@ -120,6 +126,7 @@ export function StudentsTable({
                       <span className="flex items-center gap-2 font-medium">
                         <Avatar name={s.name} size="sm" />
                         {s.name}
+                        {s.bagrutEligible && <BagrutTrophy compact />}
                       </span>
                     </td>
                     <td className="py-2 text-gray-500">{s.national_id}</td>
@@ -135,6 +142,9 @@ export function StudentsTable({
                     </td>
                     <td className="py-2 font-semibold">
                       {formatHours(s.totalHours)}
+                    </td>
+                    <td className="py-2" onClick={(e) => e.stopPropagation()}>
+                      <ProgressBar done={s.gradeDone} target={s.gradeTarget} compact />
                     </td>
                     <td className="py-2">
                       <Badge tone={s.reflA ? "green" : "red"}>
@@ -169,6 +179,7 @@ export function StudentsTable({
                   <span className="flex items-center gap-2 font-semibold">
                     <Avatar name={s.name} size="sm" />
                     {s.name}
+                    {s.bagrutEligible && <BagrutTrophy compact />}
                   </span>
                   <ChevronLeft size={18} className="text-gray-400" />
                 </div>
@@ -180,6 +191,9 @@ export function StudentsTable({
                   <span className="col-span-2">
                     מקום: {s.place ?? "—"}
                   </span>
+                </div>
+                <div className="mt-2">
+                  <ProgressBar done={s.gradeDone} target={s.gradeTarget} />
                 </div>
                 <div className="mt-2 flex gap-2 text-xs">
                   <Badge tone={s.reflA ? "green" : "red"}>

@@ -4,10 +4,17 @@ import {
   sumHours,
   hoursByPlacement,
 } from "@/lib/queries";
+import {
+  currentGradeProgress,
+  bagrutBreakdown,
+  isBagrutEligible,
+} from "@/lib/progress";
 import { Card, SectionTitle, Badge, EmptyState } from "@/components/ui";
+import { ProgressBar } from "@/components/ProgressBar";
+import { BagrutTrophy } from "@/components/BagrutTrophy";
 import { formatHours } from "@/lib/hours";
 import { formatDate } from "@/lib/format";
-import { gradeLabel, semesterLabel } from "@/lib/validation";
+import { gradeLabel, semesterLabel, BAGRUT_PER_GRADE } from "@/lib/validation";
 
 /** כרטיס תלמיד מלא — לקריאה בלבד, משותף למחנך ולמנהל. */
 export function StudentCard({ profile }: { profile: StudentProfile }) {
@@ -16,6 +23,9 @@ export function StudentCard({ profile }: { profile: StudentProfile }) {
   const byPlacement = hoursByPlacement(profile);
   const reflA = profile.reflections.find((r) => r.semester === "A");
   const reflB = profile.reflections.find((r) => r.semester === "B");
+  const progress = currentGradeProgress(profile.hours, profile.grade_level);
+  const breakdown = bagrutBreakdown(profile.hours);
+  const bagrutEligible = isBagrutEligible(profile.hours);
 
   return (
     <div className="space-y-6">
@@ -37,7 +47,34 @@ export function StudentCard({ profile }: { profile: StudentProfile }) {
             )}
             <p className="text-sm text-gray-500">אימייל: {profile.user.email}</p>
           </div>
-          <Badge tone="blue">סה&quot;כ {formatHours(total)} שעות</Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge tone="blue">סה&quot;כ {formatHours(total)} שעות</Badge>
+            {bagrutEligible && <BagrutTrophy />}
+          </div>
+        </div>
+      </Card>
+
+      {/* מד התקדמות + בגרות חברתית */}
+      <Card>
+        <SectionTitle>מד התקדמות — שכבה {gradeLabel[profile.grade_level]}</SectionTitle>
+        <ProgressBar done={progress.done} target={progress.target} />
+        <div className="mt-4 border-t border-gray-100 pt-4">
+          <div className="mb-2 text-sm font-medium text-gray-600">
+            בגרות חברתית ({BAGRUT_PER_GRADE} שעות בכל שכבה)
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {(["GRADE_10", "GRADE_11", "GRADE_12"] as const).map((g) => (
+              <div key={g}>
+                <div className="mb-1 text-xs text-gray-500">שכבה {gradeLabel[g]}</div>
+                <ProgressBar done={breakdown[g]} target={BAGRUT_PER_GRADE} compact />
+              </div>
+            ))}
+          </div>
+          {profile.bagrut_track && (
+            <div className="mt-3">
+              <Badge tone="amber">רשום/ה למסלול בגרות חברתית</Badge>
+            </div>
+          )}
         </div>
       </Card>
 

@@ -20,6 +20,7 @@ enum Role {
 enum GradeLevel {
   GRADE_10 // י'
   GRADE_11 // י"א
+  GRADE_12 // י"ב
 }
 
 enum Semester {
@@ -53,6 +54,8 @@ model Student {
   grade_level         GradeLevel
   class_name          String
   homeroom_teacher_id Int?
+  bagrut_track           Boolean  @default(false)
+  needs_placement_review Boolean  @default(false)
   created_at          DateTime   @default(now())
   updated_at          DateTime   @updatedAt
 
@@ -115,6 +118,7 @@ model VolunteerHours {
   start_time        String // "HH:MM"
   end_time          String // "HH:MM"
   calculated_hours  Float
+  grade_level       GradeLevel? // השכבה שבה דווחה השעה (snapshot)
   description       String?
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt

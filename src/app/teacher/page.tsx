@@ -4,6 +4,7 @@ import { Card, StatCard, SectionTitle, EmptyState } from "@/components/ui";
 import { formatHours } from "@/lib/hours";
 import { Role } from "@prisma/client";
 import { Users, Clock, FileSpreadsheet } from "lucide-react";
+import { currentGradeProgress, isBagrutEligible } from "@/lib/progress";
 import { StudentsTable, TeacherRow } from "./StudentsTable";
 
 export default async function TeacherDashboard() {
@@ -17,7 +18,7 @@ export default async function TeacherDashboard() {
   const students = await prisma.student.findMany({
     where: { homeroom_teacher_id: teacher.id, user: { archived_at: null } },
     include: {
-      hours: { select: { calculated_hours: true } },
+      hours: { select: { calculated_hours: true, grade_level: true } },
       reflections: { select: { semester: true } },
       placements: {
         where: { is_active: true },
@@ -31,6 +32,7 @@ export default async function TeacherDashboard() {
     const total = s.hours.reduce((sum, h) => sum + h.calculated_hours, 0);
     const semesters = new Set(s.reflections.map((r) => r.semester));
     const place = s.placements[0]?.volunteer_place ?? null;
+    const prog = currentGradeProgress(s.hours, s.grade_level);
     return {
       id: s.id,
       name: `${s.first_name} ${s.last_name}`,
@@ -40,6 +42,9 @@ export default async function TeacherDashboard() {
       supervisorPhone: place?.supervisor_phone ?? null,
       supervisorEmail: place?.supervisor_email ?? null,
       totalHours: total,
+      gradeDone: prog.done,
+      gradeTarget: prog.target,
+      bagrutEligible: isBagrutEligible(s.hours),
       reflA: semesters.has("A"),
       reflB: semesters.has("B"),
     };

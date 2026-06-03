@@ -1,11 +1,22 @@
 import { z } from "zod";
 
-export const gradeLevels = ["GRADE_10", "GRADE_11"] as const;
+export const gradeLevels = ["GRADE_10", "GRADE_11", "GRADE_12"] as const;
 
 export const gradeLabel: Record<string, string> = {
   GRADE_10: "י'",
   GRADE_11: 'י"א',
+  GRADE_12: 'י"ב',
 };
+
+/** יעד שעות רגיל לכל שכבה (null = אין דרישת מינימום). */
+export const STANDARD_HOURS: Record<string, number | null> = {
+  GRADE_10: 60,
+  GRADE_11: 30,
+  GRADE_12: null,
+};
+
+/** שעות נדרשות בכל שכבה לזכאות לתעודת בגרות חברתית. */
+export const BAGRUT_PER_GRADE = 60;
 
 export const semesterLabel: Record<string, string> = {
   A: "מחצית א'",

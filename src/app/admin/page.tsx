@@ -6,6 +6,7 @@ import { formatHours } from "@/lib/hours";
 import { Role } from "@prisma/client";
 import { Users, Clock, MapPin, TrendingUp, FileSpreadsheet } from "lucide-react";
 import { gradeLabel } from "@/lib/validation";
+import { currentGradeProgress, isBagrutEligible } from "@/lib/progress";
 import { Tabs } from "@/components/Tabs";
 import { AdminStudentsTable, AdminRow } from "./AdminStudentsTable";
 
@@ -17,7 +18,7 @@ export default async function AdminDashboard() {
     where: { user: { archived_at: null } },
     include: {
       homeroom_teacher: { select: { full_name: true } },
-      hours: { select: { calculated_hours: true } },
+      hours: { select: { calculated_hours: true, grade_level: true } },
       reflections: { select: { semester: true } },
       evaluations: { select: { id: true } },
       placements: {
@@ -31,6 +32,7 @@ export default async function AdminDashboard() {
   const rows: AdminRow[] = students.map((s) => {
     const total = s.hours.reduce((sum, h) => sum + h.calculated_hours, 0);
     const sem = new Set(s.reflections.map((r) => r.semester));
+    const prog = currentGradeProgress(s.hours, s.grade_level);
     return {
       id: s.id,
       name: `${s.first_name} ${s.last_name}`,
@@ -40,6 +42,9 @@ export default async function AdminDashboard() {
       teacher: s.homeroom_teacher?.full_name ?? "—",
       place: s.placements[0]?.volunteer_place.place_name ?? null,
       totalHours: total,
+      gradeDone: prog.done,
+      gradeTarget: prog.target,
+      bagrutEligible: isBagrutEligible(s.hours),
       reflA: sem.has("A"),
       reflB: sem.has("B"),
       hasEvaluation: s.evaluations.length > 0,
@@ -74,6 +79,12 @@ export default async function AdminDashboard() {
             className="btn-secondary"
           >
             <FileSpreadsheet size={16} /> שכבה {gradeLabel.GRADE_11}
+          </a>
+          <a
+            href="/api/export/reflections?scope=grade&value=GRADE_12"
+            className="btn-secondary"
+          >
+            <FileSpreadsheet size={16} /> שכבה {gradeLabel.GRADE_12}
           </a>
         </div>
       </Card>

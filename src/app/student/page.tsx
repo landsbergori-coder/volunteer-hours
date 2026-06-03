@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clock, MapPin, FileText, Plus, History } from "lucide-react";
+import { Clock, MapPin, FileText, Plus, History, Trophy, CalendarClock } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
@@ -7,10 +7,19 @@ import {
   activePlacement,
   sumHours,
 } from "@/lib/queries";
+import {
+  currentGradeProgress,
+  bagrutBreakdown,
+  isBagrutEligible,
+} from "@/lib/progress";
 import { StatCard, Card, SectionTitle, Badge, EmptyState } from "@/components/ui";
+import { ProgressBar } from "@/components/ProgressBar";
+import { BagrutTrophy } from "@/components/BagrutTrophy";
+import { SubmitButton } from "@/components/SubmitButton";
+import { registerBagrutAction, resolvePlacementReviewAction } from "@/actions/student";
 import { formatHours } from "@/lib/hours";
 import { formatDate } from "@/lib/format";
-import { gradeLabel, semesterLabel } from "@/lib/validation";
+import { gradeLabel, semesterLabel, BAGRUT_PER_GRADE } from "@/lib/validation";
 import { Role } from "@prisma/client";
 
 export default async function StudentDashboard() {
@@ -27,16 +36,113 @@ export default async function StudentDashboard() {
   const reflA = profile.reflections.find((r) => r.semester === "A");
   const reflB = profile.reflections.find((r) => r.semester === "B");
 
+  const progress = currentGradeProgress(profile.hours, profile.grade_level);
+  const breakdown = bagrutBreakdown(profile.hours);
+  const bagrutEligible = isBagrutEligible(profile.hours);
+  const isGrade12 = profile.grade_level === "GRADE_12";
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          שלום, {profile.first_name} {profile.last_name} 👋
-        </h1>
-        <p className="text-sm text-gray-500">
-          שכבה {gradeLabel[profile.grade_level]} · כיתה {profile.class_name}
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            שלום, {profile.first_name} {profile.last_name} 👋
+          </h1>
+          <p className="text-sm text-gray-500">
+            שכבה {gradeLabel[profile.grade_level]} · כיתה {profile.class_name}
+          </p>
+        </div>
+        {bagrutEligible && <BagrutTrophy />}
       </div>
+
+      {profile.needs_placement_review && (
+        <Card className="border-brand-200 bg-brand-50">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <CalendarClock size={22} className="mt-0.5 shrink-0 text-brand-600" />
+              <div className="text-sm">
+                <p className="font-semibold text-brand-800">שנת לימודים חדשה!</p>
+                <p className="text-brand-700">
+                  עברת לשכבה {gradeLabel[profile.grade_level]}. האם להמשיך באותו מקום
+                  התנדבות{active ? ` (${active.volunteer_place.place_name})` : ""} או
+                  לעדכן?
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <form action={resolvePlacementReviewAction}>
+                <input type="hidden" name="keep" value="1" />
+                <SubmitButton className="btn-secondary" pendingText="שומר...">
+                  המשך באותו מקום
+                </SubmitButton>
+              </form>
+              <form action={resolvePlacementReviewAction}>
+                <input type="hidden" name="keep" value="0" />
+                <SubmitButton className="btn-primary" pendingText="...">
+                  עדכון מקום התנדבות
+                </SubmitButton>
+              </form>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <Card>
+        <SectionTitle>
+          <span className="flex items-center gap-2">
+            מד התקדמות — שכבה {gradeLabel[profile.grade_level]}
+            {bagrutEligible && <Trophy size={18} className="text-amber-500" />}
+          </span>
+        </SectionTitle>
+        <ProgressBar done={progress.done} target={progress.target} />
+      </Card>
+
+      {(isGrade12 || profile.bagrut_track || bagrutEligible) && (
+        <Card>
+          <SectionTitle
+            action={
+              profile.bagrut_track ? (
+                <Badge tone="amber">רשום/ה למסלול</Badge>
+              ) : undefined
+            }
+          >
+            <span className="flex items-center gap-2">
+              <Trophy size={18} className="text-amber-500" /> בגרות חברתית
+            </span>
+          </SectionTitle>
+
+          {bagrutEligible ? (
+            <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-800">
+              כל הכבוד! עמדת בדרישת 60 שעות בכל אחת מהשכבות — את/ה זכאי/ת לתעודת
+              בגרות חברתית. 🏆
+            </div>
+          ) : (
+            <p className="mb-4 text-sm text-gray-500">
+              לזכאות לתעודת בגרות חברתית נדרשות {BAGRUT_PER_GRADE} שעות בכל אחת
+              משלוש השכבות:
+            </p>
+          )}
+
+          <div className="space-y-3">
+            {(["GRADE_10", "GRADE_11", "GRADE_12"] as const).map((g) => (
+              <div key={g}>
+                <div className="mb-1 text-sm font-medium text-gray-600">
+                  שכבה {gradeLabel[g]}
+                </div>
+                <ProgressBar done={breakdown[g]} target={BAGRUT_PER_GRADE} />
+              </div>
+            ))}
+          </div>
+
+          {isGrade12 && !profile.bagrut_track && (
+            <form action={registerBagrutAction} className="mt-4">
+              <SubmitButton className="btn-primary" pendingText="נרשם...">
+                <Trophy size={16} /> הרשמה למסלול בגרות חברתית
+              </SubmitButton>
+            </form>
+          )}
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard

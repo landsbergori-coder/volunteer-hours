@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Search, Eye, FileSpreadsheet, FileText, ChevronLeft } from "lucide-react";
 import { Badge, EmptyState } from "@/components/ui";
 import { Avatar } from "@/components/Avatar";
+import { ProgressBar } from "@/components/ProgressBar";
+import { BagrutTrophy } from "@/components/BagrutTrophy";
 import { formatHours } from "@/lib/hours";
 import { gradeLabel } from "@/lib/validation";
 
@@ -18,6 +20,9 @@ export type AdminRow = {
   teacher: string;
   place: string | null;
   totalHours: number;
+  gradeDone: number;
+  gradeTarget: number | null;
+  bagrutEligible: boolean;
   reflA: boolean;
   reflB: boolean;
   hasEvaluation: boolean;
@@ -84,6 +89,7 @@ export function AdminStudentsTable({ rows }: { rows: AdminRow[] }) {
           <option value="all">כל השכבות</option>
           <option value="GRADE_10">י&apos;</option>
           <option value="GRADE_11">י&quot;א</option>
+          <option value="GRADE_12">י&quot;ב</option>
         </select>
         <select className="input" value={cls} onChange={(e) => setCls(e.target.value)}>
           <option value="all">כל הכיתות</option>
@@ -132,6 +138,7 @@ export function AdminStudentsTable({ rows }: { rows: AdminRow[] }) {
                   <th className="py-2 font-medium">מחנך/ת</th>
                   <th className="py-2 font-medium">מקום</th>
                   <th className="py-2 font-medium">שעות</th>
+                  <th className="py-2 font-medium">התקדמות (שכבה)</th>
                   <th className="py-2 font-medium">רפלקציות</th>
                   <th className="py-2 font-medium">הערכה</th>
                   <th className="py-2"></th>
@@ -148,6 +155,7 @@ export function AdminStudentsTable({ rows }: { rows: AdminRow[] }) {
                       <span className="flex items-center gap-2 font-medium">
                         <Avatar name={s.name} size="sm" />
                         {s.name}
+                        {s.bagrutEligible && <BagrutTrophy compact />}
                       </span>
                     </td>
                     <td className="py-2 text-gray-500">{s.national_id}</td>
@@ -156,6 +164,9 @@ export function AdminStudentsTable({ rows }: { rows: AdminRow[] }) {
                     <td className="py-2 text-gray-500">{s.teacher}</td>
                     <td className="py-2">{s.place ?? "—"}</td>
                     <td className="py-2 font-semibold">{formatHours(s.totalHours)}</td>
+                    <td className="py-2" onClick={(e) => e.stopPropagation()}>
+                      <ProgressBar done={s.gradeDone} target={s.gradeTarget} compact />
+                    </td>
                     <td className="py-2">
                       <span className="flex gap-1">
                         <Badge tone={s.reflA ? "green" : "red"}>א&apos;</Badge>
@@ -188,6 +199,7 @@ export function AdminStudentsTable({ rows }: { rows: AdminRow[] }) {
                   <span className="flex items-center gap-2 font-semibold">
                     <Avatar name={s.name} size="sm" />
                     {s.name}
+                    {s.bagrutEligible && <BagrutTrophy compact />}
                   </span>
                   <ChevronLeft size={18} className="text-gray-400" />
                 </div>
@@ -196,6 +208,9 @@ export function AdminStudentsTable({ rows }: { rows: AdminRow[] }) {
                   <span className="font-semibold text-gray-700">{formatHours(s.totalHours)} שעות</span>
                   <span className="col-span-2">מחנך/ת: {s.teacher}</span>
                   <span className="col-span-2">מקום: {s.place ?? "—"}</span>
+                </div>
+                <div className="mt-2">
+                  <ProgressBar done={s.gradeDone} target={s.gradeTarget} />
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2 text-xs">
                   <Badge tone={s.reflA ? "green" : "red"}>מחצית א&apos;: {s.reflA ? "✓" : "חסר"}</Badge>

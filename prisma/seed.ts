@@ -223,7 +223,8 @@ async function main() {
     date: string,
     start: string,
     end: string,
-    desc: string
+    desc: string,
+    grade: GradeLevel
   ) {
     await prisma.volunteerHours.create({
       data: {
@@ -234,28 +235,69 @@ async function main() {
         start_time: start,
         end_time: end,
         calculated_hours: hoursBetween(start, end),
+        grade_level: grade,
         description: desc,
       },
     });
   }
 
-  // נועה — שעות במקום הישן ובמקום החדש (שתיהן נשמרות בסך הכולל)
-  await addHours(noa.id, placeLibrary.id, noaOld.id, "2025-09-10", "16:00", "18:30", "סידור ספרים");
-  await addHours(noa.id, placeLibrary.id, noaOld.id, "2025-10-08", "16:00", "18:00", "עזרה בדלפק");
-  await addHours(noa.id, placeAviv.id, noaActive.id, "2025-11-20", "17:00", "19:30", "פעילות עם הדיירים");
-  await addHours(noa.id, placeAviv.id, noaActive.id, "2025-12-04", "17:00", "20:00", "ערב שירה");
+  // נועה (י') — שעות במקום הישן ובמקום החדש (שתיהן נשמרות בסך הכולל)
+  await addHours(noa.id, placeLibrary.id, noaOld.id, "2025-09-10", "16:00", "18:30", "סידור ספרים", GradeLevel.GRADE_10);
+  await addHours(noa.id, placeLibrary.id, noaOld.id, "2025-10-08", "16:00", "18:00", "עזרה בדלפק", GradeLevel.GRADE_10);
+  await addHours(noa.id, placeAviv.id, noaActive.id, "2025-11-20", "17:00", "19:30", "פעילות עם הדיירים", GradeLevel.GRADE_10);
+  await addHours(noa.id, placeAviv.id, noaActive.id, "2025-12-04", "17:00", "20:00", "ערב שירה", GradeLevel.GRADE_10);
 
-  // איתי
-  await addHours(itai.id, placeMagen.id, itaiActive.id, "2025-11-02", "09:00", "12:00", "מיון תרומות");
-  await addHours(itai.id, placeMagen.id, itaiActive.id, "2025-11-23", "09:00", "11:30", "חלוקת מזון");
+  // איתי (י')
+  await addHours(itai.id, placeMagen.id, itaiActive.id, "2025-11-02", "09:00", "12:00", "מיון תרומות", GradeLevel.GRADE_10);
+  await addHours(itai.id, placeMagen.id, itaiActive.id, "2025-11-23", "09:00", "11:30", "חלוקת מזון", GradeLevel.GRADE_10);
 
-  // מאיה
-  await addHours(maya.id, placeAviv.id, mayaActive.id, "2025-10-15", "16:30", "19:00", "ליווי דיירים");
-  await addHours(maya.id, placeAviv.id, mayaActive.id, "2025-11-12", "16:30", "19:30", "הפעלת חוג");
-  await addHours(maya.id, placeAviv.id, mayaActive.id, "2025-12-10", "16:30", "18:00", "סיוע בארוחה");
+  // מאיה (י"א — יעד 30 שעות)
+  await addHours(maya.id, placeAviv.id, mayaActive.id, "2025-10-15", "16:30", "19:00", "ליווי דיירים", GradeLevel.GRADE_11);
+  await addHours(maya.id, placeAviv.id, mayaActive.id, "2025-11-12", "16:30", "19:30", "הפעלת חוג", GradeLevel.GRADE_11);
+  await addHours(maya.id, placeAviv.id, mayaActive.id, "2025-12-10", "16:30", "18:00", "סיוע בארוחה", GradeLevel.GRADE_11);
 
-  // תמר
-  await addHours(tamar.id, placeLibrary.id, tamarActive.id, "2025-11-05", "15:00", "17:00", "שעת סיפור לילדים");
+  // תמר (י')
+  await addHours(tamar.id, placeLibrary.id, tamarActive.id, "2025-11-05", "15:00", "17:00", "שעת סיפור לילדים", GradeLevel.GRADE_10);
+
+  // ---- יעל (י"ב) — דוגמת זכאות לבגרות חברתית: 60 שעות בכל שכבה ----
+  const yael = await createStudent({
+    first: "יעל",
+    last: "אבני",
+    id: "366666666",
+    grade: GradeLevel.GRADE_12,
+    cls: 'י"ב1',
+    teacherId: teacher2.id,
+    email: "yael@student.il",
+  });
+  await prisma.student.update({
+    where: { id: yael.id },
+    data: { bagrut_track: true },
+  });
+  const yaelActive = await prisma.studentVolunteerPlacement.create({
+    data: { student_id: yael.id, volunteer_place_id: placeMagen.id, is_active: true },
+  });
+  // 60 שעות בכל אחת מ-י'/י"א/י"ב (6 ימי התנדבות של 10 שעות לכל שכבה)
+  for (const [grade, year] of [
+    [GradeLevel.GRADE_10, 2023],
+    [GradeLevel.GRADE_11, 2024],
+    [GradeLevel.GRADE_12, 2025],
+  ] as const) {
+    for (let i = 0; i < 6; i++) {
+      await prisma.volunteerHours.create({
+        data: {
+          student_id: yael.id,
+          volunteer_place_id: placeMagen.id,
+          placement_id: yaelActive.id,
+          volunteer_date: new Date(`${year}-${String((i % 9) + 1).padStart(2, "0")}-10`),
+          start_time: "08:00",
+          end_time: "18:00",
+          calculated_hours: 10,
+          grade_level: grade,
+          description: "יום התנדבות מרוכז",
+        },
+      });
+    }
+  }
 
   // ---- רפלקציות (שתי דוגמאות) ----
   await prisma.reflection.create({
