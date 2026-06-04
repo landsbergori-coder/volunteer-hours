@@ -21,15 +21,15 @@ export function Shell({
   return (
     <div className="min-h-screen">
       <FlashToast />
-      <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 backdrop-blur shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white">
-              <HeartHandshake size={20} />
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-800 text-white shadow-sm">
+              <HeartHandshake size={19} />
             </div>
             <div>
-              <div className="text-sm font-bold leading-tight">מעורבות חברתית</div>
-              <div className="text-xs text-gray-500">ניהול שעות התנדבות</div>
+              <div className="text-sm font-bold leading-tight text-gray-900">מעורבות חברתית</div>
+              <div className="text-xs text-gray-400">ניהול שעות התנדבות</div>
             </div>
           </div>
 

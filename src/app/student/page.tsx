@@ -43,16 +43,25 @@ export default async function StudentDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* Hero greeting card */}
+      <div className="rounded-2xl bg-brand-800 px-6 py-5 text-white flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            שלום, {profile.first_name} {profile.last_name} 👋
+          <p className="text-sm text-white/65 mb-0.5">שלום חזרה,</p>
+          <h1 className="text-2xl font-bold leading-snug">
+            {profile.first_name} {profile.last_name}
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-white/65 mt-1">
             שכבה {gradeLabel[profile.grade_level]} · כיתה {profile.class_name}
           </p>
         </div>
-        {bagrutEligible && <BagrutTrophy />}
+        <div className="flex items-center gap-4">
+          {bagrutEligible && <BagrutTrophy />}
+          <div className="rounded-xl bg-white/12 px-5 py-3 text-center">
+            <div className="text-xs text-white/60 mb-0.5">שעות השנה</div>
+            <div className="text-3xl font-bold text-white leading-none">{formatHours(total)}</div>
+            <div className="text-xs text-white/55 mt-0.5">מתוך {progress.target ?? "∞"}</div>
+          </div>
+        </div>
       </div>
 
       {profile.needs_placement_review && (
@@ -148,18 +157,21 @@ export default async function StudentDashboard() {
         <StatCard
           label="סך שעות התנדבות"
           value={`${formatHours(total)} שעות`}
-          icon={<Clock size={22} />}
+          icon={<Clock size={20} />}
+          iconColor="blue"
         />
         <StatCard
           label="מקום התנדבות פעיל"
           value={active ? active.volunteer_place.place_name : "לא הוגדר"}
-          icon={<MapPin size={22} />}
+          icon={<MapPin size={20} />}
           hint={active ? `אחראי: ${active.volunteer_place.supervisor_name}` : undefined}
+          iconColor="green"
         />
         <StatCard
           label="דיווחי שעות"
           value={profile.hours.length}
-          icon={<FileText size={22} />}
+          icon={<FileText size={20} />}
+          iconColor="amber"
         />
       </div>
 

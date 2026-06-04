@@ -29,20 +29,27 @@ export function ProgressBar({
       ? "bg-brand-500"
       : "bg-amber-500";
 
+  const remaining = target - done;
+
   return (
     <div className={compact ? "w-32" : "w-full"}>
-      <div className="mb-1 flex items-center justify-between text-xs">
-        <span className={clsx("font-medium", complete ? "text-green-700" : "text-gray-600")}>
+      <div className="mb-1.5 flex items-center justify-between text-xs">
+        <span className={clsx("font-semibold", complete ? "text-green-700" : "text-gray-700")}>
           {formatHours(done)} / {target} שעות
         </span>
-        <span className="text-gray-400">{pct}%</span>
+        <span className={clsx("font-medium", complete ? "text-green-600" : "text-gray-400")}>
+          {complete ? "✓ הושלם" : `${pct}%`}
+        </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+      <div className={clsx("w-full overflow-hidden rounded-full bg-gray-100", compact ? "h-1.5" : "h-2.5")}>
         <div
-          className={clsx("h-full rounded-full transition-all", barColor)}
+          className={clsx("h-full rounded-full transition-all duration-500", barColor)}
           style={{ width: `${pct}%` }}
         />
       </div>
+      {!compact && !complete && remaining > 0 && (
+        <div className="mt-1 text-xs text-gray-400">נותרו {remaining} שעות</div>
+      )}
     </div>
   );
 }

@@ -16,23 +16,32 @@ export function StatCard({
   value,
   icon,
   hint,
+  iconColor = "blue",
 }: {
   label: string;
   value: ReactNode;
   icon?: ReactNode;
   hint?: string;
+  iconColor?: "blue" | "green" | "amber" | "red" | "purple";
 }) {
+  const iconColors: Record<string, string> = {
+    blue: "bg-brand-50 text-brand-600",
+    green: "bg-green-50 text-green-600",
+    amber: "bg-amber-50 text-amber-600",
+    red: "bg-red-50 text-red-600",
+    purple: "bg-purple-50 text-purple-600",
+  };
   return (
     <div className="card flex items-center gap-4">
       {icon && (
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+        <div className={clsx("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", iconColors[iconColor])}>
           {icon}
         </div>
       )}
-      <div>
-        <div className="text-sm text-gray-500">{label}</div>
-        <div className="text-2xl font-bold text-gray-900">{value}</div>
-        {hint && <div className="text-xs text-gray-400">{hint}</div>}
+      <div className="min-w-0">
+        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</div>
+        <div className="mt-0.5 text-2xl font-bold text-gray-900 truncate">{value}</div>
+        {hint && <div className="text-xs text-gray-400 mt-0.5">{hint}</div>}
       </div>
     </div>
   );
