@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { HeartHandshake } from "lucide-react";
+import { SCHOOL_NAME } from "@/lib/validation";
 import { LoginForm } from "./LoginForm";
 
 export default function LoginPage() {
@@ -14,6 +15,7 @@ export default function LoginPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white leading-snug">מעורבות חברתית</h1>
+            <p className="mt-1.5 text-sm font-medium text-white/90">{SCHOOL_NAME}</p>
             <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
               מערכת לניהול ורישום<br />שעות התנדבות
             </p>

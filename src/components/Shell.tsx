@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { LogOut, HeartHandshake } from "lucide-react";
-import { roleLabel } from "@/lib/validation";
+import { roleLabel, SCHOOL_NAME } from "@/lib/validation";
 import { Role } from "@prisma/client";
 import { NavLinks, NavLinksMobile, type NavLink } from "@/components/NavLinks";
 import { FlashToast } from "@/components/FlashToast";
@@ -29,7 +29,7 @@ export function Shell({
             </div>
             <div>
               <div className="text-sm font-bold leading-tight text-gray-900">מעורבות חברתית</div>
-              <div className="text-xs text-gray-400">ניהול שעות התנדבות</div>
+              <div className="text-xs text-gray-400">{SCHOOL_NAME}</div>
             </div>
           </div>
 

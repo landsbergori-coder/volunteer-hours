@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** שם המוסד החינוכי — מוצג במסך ההתחברות ובכל המסכים. */
+export const SCHOOL_NAME = "מוסד חינוכי עמקים-תבור";
+
 export const gradeLevels = ["GRADE_10", "GRADE_11", "GRADE_12"] as const;
 
 export const gradeLabel: Record<string, string> = {

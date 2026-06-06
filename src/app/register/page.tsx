@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HeartHandshake } from "lucide-react";
 import { prisma } from "@/lib/db";
+import { SCHOOL_NAME } from "@/lib/validation";
 import { RegisterForm } from "./RegisterForm";
 
 // הרשימת מחנכים נטענת בזמן ריצה (לא בזמן build) כדי שמחנכים חדשים יופיעו מיד
@@ -24,6 +25,7 @@ export default async function RegisterPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white leading-snug">מעורבות חברתית</h1>
+            <p className="mt-1.5 text-sm font-medium text-white/90">{SCHOOL_NAME}</p>
             <p className="mt-1.5 text-sm text-white/65 leading-relaxed">
               פתיחת חשבון תלמיד/ה<br />חדש/ה במערכת
             </p>
