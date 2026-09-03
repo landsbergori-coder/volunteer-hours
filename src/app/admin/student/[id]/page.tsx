@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, FileSpreadsheet } from "lucide-react";
 import { requireRole } from "@/lib/auth";
-import { getStudentProfile } from "@/lib/queries";
+import { getStudentProfile, listClasses } from "@/lib/queries";
 import { StudentCard } from "@/components/StudentCard";
 import { DeleteStudentButton } from "./DeleteStudentButton";
+import { EditStudentForm } from "./EditStudentForm";
 import { Role } from "@prisma/client";
 
 export default async function AdminStudentCard({
@@ -16,6 +17,8 @@ export default async function AdminStudentCard({
   const { id } = await params;
   const profile = await getStudentProfile(Number(id));
   if (!profile) notFound();
+
+  const classes = await listClasses();
 
   return (
     <div className="space-y-6">
@@ -39,6 +42,19 @@ export default async function AdminStudentCard({
           />
         </div>
       </div>
+      <EditStudentForm
+        student={{
+          id: profile.id,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          national_id: profile.national_id,
+          grade_level: profile.grade_level,
+          homeroom_teacher_id: profile.homeroom_teacher_id,
+          email: profile.user.email,
+        }}
+        classes={classes}
+      />
+
       <StudentCard profile={profile} />
     </div>
   );

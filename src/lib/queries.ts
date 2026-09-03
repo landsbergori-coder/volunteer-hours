@@ -1,4 +1,25 @@
 import { prisma } from "@/lib/db";
+import { GradeLevel } from "@prisma/client";
+
+/** כיתה כפי שהיא מוצגת לבחירה — מקורה ברשומת המחנך/ת. */
+export type ClassOption = {
+  id: number;
+  full_name: string;
+  class_name: string;
+  grade_level: GradeLevel;
+};
+
+/**
+ * רשימת הכיתות הפעילות במערכת (לפי המחנכים), ממוינת לפי שכבה ואז שם כיתה.
+ * משמשת את מסך ההרשמה ואת עריכת פרטי התלמיד/ה במסך המנהל.
+ */
+export async function listClasses(): Promise<ClassOption[]> {
+  return prisma.teacher.findMany({
+    where: { user: { archived_at: null } },
+    orderBy: [{ grade_level: "asc" }, { class_name: "asc" }],
+    select: { id: true, full_name: true, class_name: true, grade_level: true },
+  });
+}
 
 /** פרופיל מלא של תלמיד עם כל הקשרים — לכרטיס תלמיד ולדשבורד. */
 export async function getStudentProfile(studentId: number) {

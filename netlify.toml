@@ -1,5 +1,7 @@
 [build]
-  command = "npm run build"
+  # המיגרציות מורצות בזמן הבנייה: סביבת Netlify מגיעה ל-Neon, ולכן זה המקום
+  # היחיד שממנו אפשר להחיל שינויי סכמה. כשל במיגרציה מפיל את הבנייה ולא מפרסם.
+  command = "npm run db:deploy && npm run build"
   publish = ".next"
 
 [build.environment]

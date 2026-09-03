@@ -43,7 +43,7 @@ async function main() {
       email: "dana@school.il",
       password_hash: hash,
       role: Role.TEACHER,
-      teacher: { create: { full_name: "דנה כהן", email: "dana@school.il", class_name: "י'3" } },
+      teacher: { create: { full_name: "דנה כהן", email: "dana@school.il", class_name: "י'3", grade_level: GradeLevel.GRADE_10 } },
     },
     include: { teacher: true },
   });
@@ -53,7 +53,7 @@ async function main() {
       email: "yossi@school.il",
       password_hash: hash,
       role: Role.TEACHER,
-      teacher: { create: { full_name: "יוסי לוי", email: "yossi@school.il", class_name: 'י"א2' } },
+      teacher: { create: { full_name: "יוסי לוי", email: "yossi@school.il", class_name: 'י"א2', grade_level: GradeLevel.GRADE_11 } },
     },
     include: { teacher: true },
   });

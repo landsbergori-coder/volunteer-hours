@@ -5,6 +5,7 @@ import { roleLabel } from "@/lib/validation";
 import { Role } from "@prisma/client";
 import { CreateUserForm } from "./CreateUserForm";
 import { DeleteStaffButton } from "./DeleteStaffButton";
+import { EditTeacherClassForm } from "./EditTeacherClassForm";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ export default async function AccountsPage() {
                     <th className="py-2 font-medium">שם</th>
                     <th className="py-2 font-medium">תפקיד</th>
                     <th className="py-2 font-medium">אימייל</th>
-                    <th className="py-2 font-medium">כיתה</th>
+                    <th className="py-2 font-medium">כיתה ושכבה</th>
                     <th className="py-2 text-left font-medium">מחיקה</th>
                   </tr>
                 </thead>
@@ -59,7 +60,17 @@ export default async function AccountsPage() {
                         </Badge>
                       </td>
                       <td className="py-2 text-gray-500">{u.email}</td>
-                      <td className="py-2">{u.teacher?.class_name ?? "—"}</td>
+                      <td className="py-2">
+                        {u.teacher ? (
+                          <EditTeacherClassForm
+                            teacherId={u.teacher.id}
+                            className={u.teacher.class_name}
+                            gradeLevel={u.teacher.grade_level}
+                          />
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td className="py-2">
                         <div className="flex justify-end">
                           <DeleteStaffButton

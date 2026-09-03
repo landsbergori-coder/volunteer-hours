@@ -1,18 +1,14 @@
 import Link from "next/link";
 import { HeartHandshake } from "lucide-react";
-import { prisma } from "@/lib/db";
+import { listClasses } from "@/lib/queries";
 import { SCHOOL_NAME } from "@/lib/validation";
 import { RegisterForm } from "./RegisterForm";
 
-// הרשימת מחנכים נטענת בזמן ריצה (לא בזמן build) כדי שמחנכים חדשים יופיעו מיד
+// רשימת הכיתות נטענת בזמן ריצה (לא בזמן build) כדי שכיתות חדשות יופיעו מיד
 export const dynamic = "force-dynamic";
 
 export default async function RegisterPage() {
-  const teachers = await prisma.teacher.findMany({
-    where: { user: { archived_at: null } },
-    orderBy: { full_name: "asc" },
-    select: { id: true, full_name: true, class_name: true },
-  });
+  const classes = await listClasses();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f4f6fb] px-4 py-8">
@@ -38,7 +34,7 @@ export default async function RegisterPage() {
         {/* טופס הרשמה */}
         <div className="flex flex-1 flex-col justify-center bg-white px-8 py-10">
           <h2 className="mb-6 text-xl font-bold text-gray-900">הרשמת תלמיד/ה</h2>
-          <RegisterForm teachers={teachers} />
+          <RegisterForm classes={classes} />
           <p className="mt-5 text-center text-sm text-gray-500">
             כבר רשום/ה?{" "}
             <Link href="/login" className="font-semibold text-brand-600 hover:underline">

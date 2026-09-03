@@ -6,15 +6,15 @@ import { initialActionState } from "@/lib/form";
 import { SubmitButton } from "@/components/SubmitButton";
 import { PasswordInput } from "@/components/PasswordInput";
 import { Alert } from "@/components/ui";
-
-type Teacher = { id: number; full_name: string; class_name: string };
+import { gradeLabel, gradeLevels } from "@/lib/validation";
+import type { ClassOption } from "@/lib/queries";
 
 function Err({ msg }: { msg?: string }) {
   if (!msg) return null;
   return <p className="mt-1 text-xs text-red-600">{msg}</p>;
 }
 
-export function RegisterForm({ teachers }: { teachers: Teacher[] }) {
+export function RegisterForm({ classes }: { classes: ClassOption[] }) {
   const [state, formAction] = useActionState(
     registerStudentAction,
     initialActionState
@@ -44,38 +44,37 @@ export function RegisterForm({ teachers }: { teachers: Teacher[] }) {
         <Err msg={e.national_id} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className="label">שכבה</label>
-          <select name="grade_level" className="input" defaultValue="">
-            <option value="" disabled>
-              בחר/י שכבה
-            </option>
-            <option value="GRADE_10">י'</option>
-            <option value="GRADE_11">י&quot;א</option>
-            <option value="GRADE_12">י&quot;ב</option>
-          </select>
-          <Err msg={e.grade_level} />
-        </div>
-        <div>
-          <label className="label">כיתה</label>
-          <input name="class_name" className="input" placeholder="לדוגמה: י'3" />
-          <Err msg={e.class_name} />
-        </div>
-      </div>
-
       <div>
-        <label className="label">מחנך/ת</label>
-        <select name="homeroom_teacher_id" className="input" defaultValue="">
-          <option value="" disabled>
-            בחר/י מחנך/ת
-          </option>
-          {teachers.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.full_name} ({t.class_name})
+        <label className="label">כיתה</label>
+        {classes.length === 0 ? (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            עדיין לא הוגדרו כיתות במערכת. יש לפנות למנהל/ת המערכת כדי שיוגדרו
+            מחנכים וכיתות לפני ההרשמה.
+          </p>
+        ) : (
+          <select name="homeroom_teacher_id" className="input" defaultValue="">
+            <option value="" disabled>
+              בחר/י כיתה
             </option>
-          ))}
-        </select>
+            {gradeLevels
+              .filter((g) => classes.some((c) => c.grade_level === g))
+              .map((g) => (
+                <optgroup key={g} label={`שכבה ${gradeLabel[g]}`}>
+                  {classes
+                    .filter((c) => c.grade_level === g)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.class_name} · {c.full_name}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+          </select>
+        )}
+        <p className="mt-1 text-xs text-gray-500">
+          הרשימה מציגה את הכיתות כפי שהוגדרו במערכת. השכבה והמחנך/ת נקבעים לפי
+          הכיתה שנבחרה.
+        </p>
         <Err msg={e.homeroom_teacher_id} />
       </div>
 

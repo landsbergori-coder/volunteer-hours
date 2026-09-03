@@ -5,6 +5,7 @@ import { createUserAction } from "@/actions/admin";
 import { initialActionState } from "@/lib/form";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Alert } from "@/components/ui";
+import { gradeLabel, gradeLevels } from "@/lib/validation";
 
 function Err({ msg }: { msg?: string }) {
   if (!msg) return null;
@@ -36,10 +37,29 @@ export function CreateUserForm() {
       </div>
 
       {role === "TEACHER" && (
-        <div>
-          <label className="label">שם הכיתה</label>
-          <input name="class_name" className="input" placeholder="לדוגמה: י'3" />
-          <Err msg={e.class_name} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label className="label">שם הכיתה</label>
+            <input name="class_name" className="input" placeholder="לדוגמה: י'3" />
+            <Err msg={e.class_name} />
+          </div>
+          <div>
+            <label className="label">שכבה</label>
+            <select name="grade_level" className="input" defaultValue="">
+              <option value="" disabled>
+                בחר/י שכבה
+              </option>
+              {gradeLevels.map((g) => (
+                <option key={g} value={g}>
+                  {gradeLabel[g]}
+                </option>
+              ))}
+            </select>
+            <Err msg={e.grade_level} />
+            <p className="mt-1 text-xs text-gray-500">
+              השכבה שתיקבע כאן היא זו שתוצג לתלמידים בבחירת הכיתה בהרשמה.
+            </p>
+          </div>
         </div>
       )}
 

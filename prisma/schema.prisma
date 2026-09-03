@@ -73,6 +73,8 @@ model Teacher {
   full_name  String
   email      String
   class_name String
+  // השכבה שאליה שייכת הכיתה — קובעת את שכבת התלמיד/ה בהרשמה
+  grade_level GradeLevel @default(GRADE_10)
 
   user     User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   students Student[]

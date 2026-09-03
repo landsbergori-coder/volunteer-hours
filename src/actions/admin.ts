@@ -5,7 +5,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
-import { createUserSchema, createAdminSchema, gradeLabel } from "@/lib/validation";
+import {
+  createUserSchema,
+  createAdminSchema,
+  gradeLabel,
+  updateStudentSchema,
+  updateTeacherClassSchema,
+} from "@/lib/validation";
 import { ActionState, parseForm } from "@/lib/form";
 import { Role, GradeLevel } from "@prisma/client";
 
@@ -27,6 +33,9 @@ export async function createUserAction(
   if (d.role === "TEACHER" && !d.class_name)
     return { ok: false, errors: { class_name: "יש להזין שם כיתה למחנך/ת" } };
 
+  if (d.role === "TEACHER" && !d.grade_level)
+    return { ok: false, errors: { grade_level: "יש לבחור את שכבת הכיתה" } };
+
   const password_hash = await bcrypt.hash(d.password, 10);
 
   await prisma.user.create({
@@ -44,6 +53,7 @@ export async function createUserAction(
                 full_name: d.full_name,
                 email,
                 class_name: d.class_name!,
+                grade_level: d.grade_level as GradeLevel,
               },
             },
           }
@@ -329,4 +339,107 @@ export async function restoreAllArchivedAction(): Promise<void> {
     data: { archived_at: null },
   });
   redirect(flash("/admin/archive", "כל הפריטים שוחזרו"));
+}
+
+/**
+ * עדכון הכיתה והשכבה של מחנך/ת.
+ * שם הכיתה מסונכרן גם לתלמידים המשויכים, כדי שהכיתה תוצג אחידה בכל המסכים.
+ */
+export async function updateTeacherClassAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  await requireRole(Role.ADMIN);
+  const parsed = parseForm(updateTeacherClassSchema, formData);
+  if (!parsed.success) return { ok: false, errors: parsed.errors };
+  const d = parsed.data;
+
+  const teacher = await prisma.teacher.findUnique({
+    where: { id: d.teacher_id },
+  });
+  if (!teacher) return { ok: false, message: "מחנך/ת לא נמצא/ה" };
+
+  await prisma.$transaction([
+    prisma.teacher.update({
+      where: { id: teacher.id },
+      data: { class_name: d.class_name, grade_level: d.grade_level },
+    }),
+    prisma.student.updateMany({
+      where: { homeroom_teacher_id: teacher.id },
+      data: { class_name: d.class_name },
+    }),
+  ]);
+
+  revalidatePath("/admin/accounts");
+  revalidatePath("/admin");
+  return { ok: true, message: `הכיתה של ${teacher.full_name} עודכנה` };
+}
+
+/**
+ * עריכת פרטי תלמיד/ה ע"י מנהל המערכת.
+ * שם הכיתה נגזר מהמחנך/ת שנבחר/ה; השכבה נשמרת בנפרד כי היא יכולה
+ * להשתנות בהעברת שנה בלי שהכיתה תתעדכן.
+ */
+export async function updateStudentAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  await requireRole(Role.ADMIN);
+  const parsed = parseForm(updateStudentSchema, formData);
+  if (!parsed.success) return { ok: false, errors: parsed.errors };
+  const d = parsed.data;
+  const email = d.email.toLowerCase();
+
+  const student = await prisma.student.findUnique({
+    where: { id: d.student_id },
+    include: { user: { select: { id: true } } },
+  });
+  if (!student) return { ok: false, message: "התלמיד/ה לא נמצא/ה" };
+
+  const teacher = await prisma.teacher.findUnique({
+    where: { id: d.homeroom_teacher_id },
+  });
+  if (!teacher)
+    return { ok: false, errors: { homeroom_teacher_id: "הכיתה שנבחרה לא נמצאה" } };
+
+  // ת"ז ואימייל הם מזהים ייחודיים — נבדקים מול שאר המשתמשים בלבד
+  const idTaken = await prisma.student.findFirst({
+    where: { national_id: d.national_id, id: { not: student.id } },
+    select: { id: true },
+  });
+  if (idTaken)
+    return {
+      ok: false,
+      errors: { national_id: "תעודת זהות זו כבר רשומה במערכת" },
+    };
+
+  const emailTaken = await prisma.user.findFirst({
+    where: { email, id: { not: student.user.id } },
+    select: { id: true },
+  });
+  if (emailTaken)
+    return { ok: false, errors: { email: "כתובת אימייל זו כבר רשומה במערכת" } };
+
+  await prisma.$transaction([
+    prisma.student.update({
+      where: { id: student.id },
+      data: {
+        first_name: d.first_name,
+        last_name: d.last_name,
+        national_id: d.national_id,
+        grade_level: d.grade_level,
+        class_name: teacher.class_name,
+        homeroom_teacher_id: teacher.id,
+      },
+    }),
+    prisma.user.update({
+      where: { id: student.user.id },
+      data: { full_name: `${d.first_name} ${d.last_name}`, email },
+    }),
+  ]);
+
+  revalidatePath(`/admin/student/${student.id}`);
+  revalidatePath("/admin");
+  revalidatePath("/teacher");
+  return { ok: true, message: "פרטי התלמיד/ה עודכנו בהצלחה" };
 }

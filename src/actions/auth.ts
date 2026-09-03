@@ -70,11 +70,12 @@ export async function registerStudentAction(
       errors: { national_id: "תעודת זהות זו כבר רשומה במערכת" },
     };
 
+  // הכיתה שנבחרה היא מקור האמת: ממנה נגזרים שם הכיתה, השכבה והמחנך/ת
   const teacher = await prisma.teacher.findUnique({
     where: { id: d.homeroom_teacher_id },
   });
   if (!teacher)
-    return { ok: false, errors: { homeroom_teacher_id: "מחנך/ת לא נמצא/ה" } };
+    return { ok: false, errors: { homeroom_teacher_id: "הכיתה שנבחרה לא נמצאה" } };
 
   const password_hash = await bcrypt.hash(d.password, 10);
 
@@ -89,8 +90,8 @@ export async function registerStudentAction(
           first_name: d.first_name,
           last_name: d.last_name,
           national_id: d.national_id,
-          grade_level: d.grade_level,
-          class_name: d.class_name,
+          grade_level: teacher.grade_level,
+          class_name: teacher.class_name,
           homeroom_teacher_id: teacher.id,
         },
       },

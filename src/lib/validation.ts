@@ -33,6 +33,10 @@ export const roleLabel: Record<string, string> = {
   SUPERVISOR: "אחראי מקום התנדבות",
 };
 
+/**
+ * הרשמת תלמיד/ה. הכיתה נבחרת מרשימת הכיתות הקיימות במערכת,
+ * ומתוכה נגזרים בשרת שם הכיתה, השכבה והמחנך/ת — ולכן אינם שדות בטופס.
+ */
 export const registerStudentSchema = z
   .object({
     first_name: z.string().trim().min(1, "שם פרטי הוא שדה חובה"),
@@ -41,11 +45,7 @@ export const registerStudentSchema = z
       .string()
       .trim()
       .regex(/^\d{5,9}$/, "תעודת זהות חייבת להכיל 5-9 ספרות"),
-    grade_level: z.enum(gradeLevels, {
-      errorMap: () => ({ message: "יש לבחור שכבה" }),
-    }),
-    class_name: z.string().trim().min(1, "כיתה היא שדה חובה"),
-    homeroom_teacher_id: z.coerce.number().int().positive("יש לבחור מחנך/ת"),
+    homeroom_teacher_id: z.coerce.number().int().positive("יש לבחור כיתה"),
     email: z.string().trim().email("כתובת אימייל אינה תקינה"),
     password: z.string().min(6, "סיסמה חייבת להכיל לפחות 6 תווים"),
     confirm_password: z.string(),
@@ -54,6 +54,22 @@ export const registerStudentSchema = z
     message: "הסיסמאות אינן תואמות",
     path: ["confirm_password"],
   });
+
+/** עריכת פרטי תלמיד/ה ע"י מנהל המערכת. */
+export const updateStudentSchema = z.object({
+  student_id: z.coerce.number().int().positive(),
+  first_name: z.string().trim().min(1, "שם פרטי הוא שדה חובה"),
+  last_name: z.string().trim().min(1, "שם משפחה הוא שדה חובה"),
+  national_id: z
+    .string()
+    .trim()
+    .regex(/^\d{5,9}$/, "תעודת זהות חייבת להכיל 5-9 ספרות"),
+  homeroom_teacher_id: z.coerce.number().int().positive("יש לבחור כיתה"),
+  grade_level: z.enum(gradeLevels, {
+    errorMap: () => ({ message: "יש לבחור שכבה" }),
+  }),
+  email: z.string().trim().email("כתובת אימייל אינה תקינה"),
+});
 
 export const loginSchema = z.object({
   email: z.string().trim().email("כתובת אימייל אינה תקינה"),
@@ -104,7 +120,18 @@ export const createUserSchema = z.object({
   role: z.enum(["TEACHER", "SUPERVISOR"], {
     errorMap: () => ({ message: "יש לבחור תפקיד" }),
   }),
+  // רלוונטיים למחנך/ת בלבד — נבדקים בפעולה עצמה
   class_name: z.string().trim().optional(),
+  grade_level: z.enum(gradeLevels).optional(),
+});
+
+/** עדכון הכיתה והשכבה של מחנך/ת קיים/ת. */
+export const updateTeacherClassSchema = z.object({
+  teacher_id: z.coerce.number().int().positive(),
+  class_name: z.string().trim().min(1, "שם הכיתה הוא שדה חובה"),
+  grade_level: z.enum(gradeLevels, {
+    errorMap: () => ({ message: "יש לבחור שכבה" }),
+  }),
 });
 
 export const createAdminSchema = z.object({
