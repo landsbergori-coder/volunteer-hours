@@ -1,7 +1,10 @@
 // Prisma schema — אפליקציית ניהול שעות התנדבות
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  provider = "prisma-client-js"
+  // native  — מכונת הפיתוח, וגם מכונת הבנייה של Netlify (debian)
+  // debian  — ה-schema-engine שנדרש להרצת המיגרציות בזמן הבנייה
+  // rhel    — ה-query-engine שנדרש בזמן ריצה, בפונקציות של Netlify (Lambda)
+  binaryTargets = ["native", "debian-openssl-3.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {

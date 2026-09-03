@@ -5,8 +5,10 @@
   publish = ".next"
 
 [build.environment]
-  # Prisma מוריד את ה-engine המתאים לתשתית Netlify בזמן ה-postinstall
-  PRISMA_CLI_BINARY_TARGETS = "rhel-openssl-3.0.x"
+  # רשימת ה-engines שיורדים ב-postinstall. חייבת לכלול גם את debian (מכונת
+  # הבנייה, לצורך המיגרציות) וגם את rhel (זמן ריצה בפונקציות), אחרת
+  # prisma migrate deploy נכשל עם "Could not find schema-engine binary".
+  PRISMA_CLI_BINARY_TARGETS = "native,debian-openssl-3.0.x,rhel-openssl-3.0.x"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
