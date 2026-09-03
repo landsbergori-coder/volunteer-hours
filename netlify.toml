@@ -8,7 +8,9 @@
   # רשימת ה-engines שיורדים ב-postinstall. חייבת לכלול גם את debian (מכונת
   # הבנייה, לצורך המיגרציות) וגם את rhel (זמן ריצה בפונקציות), אחרת
   # prisma migrate deploy נכשל עם "Could not find schema-engine binary".
-  PRISMA_CLI_BINARY_TARGETS = "native,debian-openssl-3.0.x,rhel-openssl-3.0.x"
+  # רק יעדים קונקרטיים — המשתנה הזה לא מקבל "native" ונופל עליו
+  # ("Unknown binaryTarget native"), בניגוד ל-binaryTargets שבסכמה.
+  PRISMA_CLI_BINARY_TARGETS = "debian-openssl-3.0.x,rhel-openssl-3.0.x"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
