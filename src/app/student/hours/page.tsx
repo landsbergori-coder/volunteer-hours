@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
   getStudentProfile,
-  activePlacement,
+  activePlacements,
   sumHours,
 } from "@/lib/queries";
 import { Card, SectionTitle, EmptyState, Badge } from "@/components/ui";
@@ -21,8 +21,12 @@ export default async function StudentHoursPage() {
   });
   if (!student) return null;
   const profile = (await getStudentProfile(student.id))!;
-  const active = activePlacement(profile);
+  const actives = activePlacements(profile);
   const total = sumHours(profile);
+  const placeOptions = actives.map((p) => ({
+    id: p.id,
+    name: p.volunteer_place.place_name,
+  }));
 
   return (
     <div className="space-y-6">
@@ -31,12 +35,7 @@ export default async function StudentHoursPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <SectionTitle>דיווח שעות חדש</SectionTitle>
-          {active && (
-            <p className="mb-3 text-xs text-gray-500">
-              מקום פעיל: {active.volunteer_place.place_name}
-            </p>
-          )}
-          <HoursForm disabled={!active} />
+          <HoursForm places={placeOptions} />
         </Card>
 
         <Card className="lg:col-span-2">

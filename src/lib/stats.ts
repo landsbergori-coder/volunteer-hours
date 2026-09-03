@@ -77,8 +77,9 @@ export async function getAdminStats(): Promise<AdminStats> {
     c.totalHours += sHours;
     byClass.set(s.class_name, c);
 
-    const activePlace = s.placements[0]?.volunteer_place?.place_name;
-    if (activePlace) {
+    // תלמיד/ה שמתנדב/ת בכמה מקומות נספר/ת בכל אחד מהמקומות
+    for (const pl of s.placements) {
+      const activePlace = pl.volunteer_place.place_name;
       const set = byPlace.get(activePlace) ?? new Set<number>();
       set.add(s.id);
       byPlace.set(activePlace, set);

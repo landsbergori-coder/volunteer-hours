@@ -10,14 +10,19 @@ import { ProgressBar } from "@/components/ProgressBar";
 import { BagrutTrophy } from "@/components/BagrutTrophy";
 import { formatHours } from "@/lib/hours";
 
+export type TeacherPlace = {
+  name: string;
+  supervisor: string;
+  phone: string;
+  email: string;
+};
+
 export type TeacherRow = {
   id: number;
   name: string;
   national_id: string;
-  place: string | null;
-  supervisor: string | null;
-  supervisorPhone: string | null;
-  supervisorEmail: string | null;
+  /** כל מקומות ההתנדבות הפעילים — תלמיד/ה יכול/ה להתנדב בכמה מקומות במקביל */
+  places: TeacherPlace[];
   totalHours: number;
   gradeDone: number;
   gradeTarget: number | null;
@@ -54,7 +59,10 @@ export function StudentsTable({
     r = [...r].sort((a, b) => {
       if (sort === "hours") return b.totalHours - a.totalHours;
       if (sort === "place")
-        return (a.place ?? "").localeCompare(b.place ?? "", "he");
+        return (a.places[0]?.name ?? "").localeCompare(
+          b.places[0]?.name ?? "",
+          "he"
+        );
       return a.name.localeCompare(b.name, "he");
     });
     return r;
@@ -130,15 +138,28 @@ export function StudentsTable({
                       </span>
                     </td>
                     <td className="py-2 text-gray-500">{s.national_id}</td>
-                    <td className="py-2">{s.place ?? "—"}</td>
-                    <td className="py-2 text-gray-500">
-                      {s.supervisor ? (
-                        <span title={`${s.supervisorPhone} · ${s.supervisorEmail}`}>
-                          {s.supervisor}
-                        </span>
-                      ) : (
+                    <td className="py-2">
+                      {s.places.length === 0 ? (
                         "—"
+                      ) : (
+                        <span className="flex flex-wrap gap-1">
+                          {s.places.map((p) => (
+                            <Badge key={p.name} tone="blue">
+                              {p.name}
+                            </Badge>
+                          ))}
+                        </span>
                       )}
+                    </td>
+                    <td className="py-2 text-gray-500">
+                      {s.places.length === 0
+                        ? "—"
+                        : s.places.map((p, i) => (
+                            <span key={p.name} title={`${p.phone} · ${p.email}`}>
+                              {i > 0 && ", "}
+                              {p.supervisor}
+                            </span>
+                          ))}
                     </td>
                     <td className="py-2 font-semibold">
                       {formatHours(s.totalHours)}
@@ -189,7 +210,8 @@ export function StudentsTable({
                     {formatHours(s.totalHours)} שעות
                   </span>
                   <span className="col-span-2">
-                    מקום: {s.place ?? "—"}
+                    {s.places.length > 1 ? "מקומות" : "מקום"}:{" "}
+                    {s.places.map((p) => p.name).join(", ") || "—"}
                   </span>
                 </div>
                 <div className="mt-2">

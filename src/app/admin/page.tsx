@@ -40,7 +40,7 @@ export default async function AdminDashboard() {
       grade_level: s.grade_level,
       class_name: s.class_name,
       teacher: s.homeroom_teacher?.full_name ?? "—",
-      place: s.placements[0]?.volunteer_place.place_name ?? null,
+      places: s.placements.map((pl) => pl.volunteer_place.place_name),
       totalHours: total,
       gradeDone: prog.done,
       gradeTarget: prog.target,

@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   const data = students.map((s) => {
     const total = s.hours.reduce((sum, h) => sum + h.calculated_hours, 0);
     const sem = new Set(s.reflections.map((r) => r.semester));
-    const place = s.placements[0]?.volunteer_place;
+    const places = s.placements.map((pl) => pl.volunteer_place);
     return {
       "שם פרטי": s.first_name,
       "שם משפחה": s.last_name,
@@ -40,8 +40,9 @@ export async function GET(req: NextRequest) {
       שכבה: gradeLabel[s.grade_level],
       כיתה: s.class_name,
       "מחנך/ת": s.homeroom_teacher?.full_name ?? "",
-      "מקום התנדבות": place?.place_name ?? "",
-      "אחראי במקום": place?.supervisor_name ?? "",
+      "מקום התנדבות": places.map((p) => p.place_name).join(", "),
+      "אחראי במקום": places.map((p) => p.supervisor_name).join(", "),
+      "מספר מקומות": places.length,
       'סה"כ שעות': Math.round(total * 100) / 100,
       "רפלקציה א'": sem.has("A") ? "הוגשה" : "חסר",
       "רפלקציה ב'": sem.has("B") ? "הוגשה" : "חסר",

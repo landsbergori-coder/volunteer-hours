@@ -4,7 +4,8 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
   getStudentProfile,
-  activePlacement,
+  activePlacements,
+  activePlaceNames,
   sumHours,
 } from "@/lib/queries";
 import {
@@ -29,7 +30,8 @@ export default async function StudentDashboard() {
   });
   if (!student) return null;
   const profile = (await getStudentProfile(student.id))!;
-  const active = activePlacement(profile);
+  const actives = activePlacements(profile);
+  const activeNames = activePlaceNames(profile);
   const total = sumHours(profile);
   const recent = profile.hours.slice(0, 5);
 
@@ -66,30 +68,61 @@ export default async function StudentDashboard() {
 
       {profile.needs_placement_review && (
         <Card className="border-brand-200 bg-brand-50">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <CalendarClock size={22} className="mt-0.5 shrink-0 text-brand-600" />
-              <div className="text-sm">
-                <p className="font-semibold text-brand-800">שנת לימודים חדשה!</p>
-                <p className="text-brand-700">
-                  עברת לשכבה {gradeLabel[profile.grade_level]}. האם להמשיך באותו מקום
-                  התנדבות{active ? ` (${active.volunteer_place.place_name})` : ""} או
-                  לעדכן?
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <form action={resolvePlacementReviewAction}>
-                <input type="hidden" name="keep" value="1" />
-                <SubmitButton className="btn-secondary" pendingText="שומר...">
-                  המשך באותו מקום
-                </SubmitButton>
-              </form>
-              <form action={resolvePlacementReviewAction}>
-                <input type="hidden" name="keep" value="0" />
-                <SubmitButton className="btn-primary" pendingText="...">
-                  עדכון מקום התנדבות
-                </SubmitButton>
+          <div className="flex items-start gap-3">
+            <CalendarClock size={22} className="mt-0.5 shrink-0 text-brand-600" />
+            <div className="w-full text-sm">
+              <p className="font-semibold text-brand-800">שנת לימודים חדשה!</p>
+              <p className="text-brand-700">
+                עברת לשכבה {gradeLabel[profile.grade_level]}.{" "}
+                {actives.length > 0
+                  ? "באילו ממקומות ההתנדבות שלך את/ה ממשיך/ה השנה?"
+                  : "אין לך כרגע מקום התנדבות פעיל — אפשר להוסיף מקום חדש."}
+              </p>
+
+              <form action={resolvePlacementReviewAction} className="mt-3 space-y-3">
+                {actives.length > 0 && (
+                  <>
+                    <ul className="space-y-2">
+                      {actives.map((p) => (
+                        <li key={p.id}>
+                          <label className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-brand-100 bg-white px-3 py-2">
+                            <input
+                              type="checkbox"
+                              name="keep_placement_id"
+                              value={p.id}
+                              defaultChecked
+                              className="h-4 w-4 accent-brand-600"
+                            />
+                            <span className="font-medium text-gray-900">
+                              {p.volunteer_place.place_name}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              אחראי: {p.volunteer_place.supervisor_name}
+                            </span>
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-brand-700">
+                      מקום שלא יסומן יעבור להיסטוריה — השעות שדיווחת בו יישמרו
+                      וימשיכו להיספר בסך הכולל.
+                    </p>
+                  </>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <SubmitButton className="btn-secondary" pendingText="שומר...">
+                    שמירה והמשך
+                  </SubmitButton>
+                  <SubmitButton
+                    className="btn-primary"
+                    name="intent"
+                    value="edit"
+                    pendingText="..."
+                  >
+                    שמירה והוספת מקום התנדבות
+                  </SubmitButton>
+                </div>
               </form>
             </div>
           </div>
@@ -161,10 +194,22 @@ export default async function StudentDashboard() {
           iconColor="blue"
         />
         <StatCard
-          label="מקום התנדבות פעיל"
-          value={active ? active.volunteer_place.place_name : "לא הוגדר"}
+          label={actives.length > 1 ? "מקומות התנדבות פעילים" : "מקום התנדבות פעיל"}
+          value={
+            actives.length === 0
+              ? "לא הוגדר"
+              : actives.length === 1
+                ? actives[0].volunteer_place.place_name
+                : `${actives.length} מקומות`
+          }
           icon={<MapPin size={20} />}
-          hint={active ? `אחראי: ${active.volunteer_place.supervisor_name}` : undefined}
+          hint={
+            actives.length === 0
+              ? undefined
+              : actives.length === 1
+                ? `אחראי: ${actives[0].volunteer_place.supervisor_name}`
+                : activeNames
+          }
           iconColor="green"
         />
         <StatCard
@@ -180,14 +225,15 @@ export default async function StudentDashboard() {
           <Plus size={18} /> דיווח שעות חדש
         </Link>
         <Link href="/student/place" className="btn-secondary">
-          <MapPin size={18} /> {active ? "שינוי מקום התנדבות" : "הגדרת מקום התנדבות"}
+          <MapPin size={18} />{" "}
+          {actives.length > 0 ? "ניהול מקומות התנדבות" : "הגדרת מקום התנדבות"}
         </Link>
         <Link href="/student/reflection" className="btn-secondary">
           <FileText size={18} /> רפלקציות
         </Link>
       </div>
 
-      {!active && (
+      {actives.length === 0 && (
         <Card className="border-amber-200 bg-amber-50">
           <p className="text-sm text-amber-800">
             עדיין לא הגדרת מקום התנדבות. כדי לדווח שעות, יש להגדיר מקום התנדבות פעיל.{" "}
@@ -213,7 +259,7 @@ export default async function StudentDashboard() {
             <EmptyState>
               <div className="space-y-3">
                 <p>עדיין לא דיווחת שעות התנדבות.</p>
-                {active && (
+                {actives.length > 0 && (
                   <Link href="/student/hours" className="btn-primary">
                     <Plus size={16} /> דיווח שעות ראשון
                   </Link>
@@ -281,7 +327,7 @@ export default async function StudentDashboard() {
         <Card>
           <SectionTitle>
             <span className="flex items-center gap-2">
-              <History size={18} /> היסטוריית מקומות התנדבות
+              <History size={18} /> מקומות ההתנדבות שלי
             </span>
           </SectionTitle>
           <div className="overflow-x-auto">

@@ -12,10 +12,13 @@ function Err({ msg }: { msg?: string }) {
   return <p className="mt-1 text-xs text-red-600">{msg}</p>;
 }
 
-export function HoursForm({ disabled }: { disabled: boolean }) {
+export type PlaceOption = { id: number; name: string };
+
+export function HoursForm({ places }: { places: PlaceOption[] }) {
   const [state, formAction] = useActionState(addHoursAction, initialActionState);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  const disabled = places.length === 0;
 
   const calc = start && end ? calculateHours(start, end) : null;
 
@@ -29,6 +32,29 @@ export function HoursForm({ disabled }: { disabled: boolean }) {
           יש להגדיר מקום התנדבות פעיל לפני דיווח שעות.
         </Alert>
       )}
+
+      <div>
+        <label className="label">מקום ההתנדבות</label>
+        <select
+          name="placement_id"
+          className="input"
+          disabled={disabled}
+          defaultValue={places[0]?.id ?? ""}
+        >
+          {disabled && <option value="">אין מקום התנדבות פעיל</option>}
+          {places.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        {places.length > 1 && (
+          <p className="mt-1 text-xs text-gray-500">
+            את/ה מתנדב/ת בכמה מקומות — יש לבחור לאיזה מקום שייך הדיווח.
+          </p>
+        )}
+        <Err msg={state.errors?.placement_id} />
+      </div>
 
       <div>
         <label className="label">תאריך ההתנדבות</label>

@@ -207,8 +207,12 @@ async function main() {
   const itaiActive = await prisma.studentVolunteerPlacement.create({
     data: { student_id: itai.id, volunteer_place_id: placeMagen.id, is_active: true },
   });
+  // מאיה — מתנדבת בשני מקומות במקביל (להדגמת ריבוי מקומות התנדבות)
   const mayaActive = await prisma.studentVolunteerPlacement.create({
     data: { student_id: maya.id, volunteer_place_id: placeAviv.id, is_active: true },
+  });
+  const mayaSecond = await prisma.studentVolunteerPlacement.create({
+    data: { student_id: maya.id, volunteer_place_id: placeLibrary.id, is_active: true },
   });
   const tamarActive = await prisma.studentVolunteerPlacement.create({
     data: { student_id: tamar.id, volunteer_place_id: placeLibrary.id, is_active: true },
@@ -255,6 +259,9 @@ async function main() {
   await addHours(maya.id, placeAviv.id, mayaActive.id, "2025-10-15", "16:30", "19:00", "ליווי דיירים", GradeLevel.GRADE_11);
   await addHours(maya.id, placeAviv.id, mayaActive.id, "2025-11-12", "16:30", "19:30", "הפעלת חוג", GradeLevel.GRADE_11);
   await addHours(maya.id, placeAviv.id, mayaActive.id, "2025-12-10", "16:30", "18:00", "סיוע בארוחה", GradeLevel.GRADE_11);
+  // ...ובמקביל גם בספרייה
+  await addHours(maya.id, placeLibrary.id, mayaSecond.id, "2025-11-19", "15:00", "17:30", "סידור ספרים", GradeLevel.GRADE_11);
+  await addHours(maya.id, placeLibrary.id, mayaSecond.id, "2025-12-17", "15:00", "17:00", "שעת סיפור", GradeLevel.GRADE_11);
 
   // תמר (י')
   await addHours(tamar.id, placeLibrary.id, tamarActive.id, "2025-11-05", "15:00", "17:00", "שעת סיפור לילדים", GradeLevel.GRADE_10);

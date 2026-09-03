@@ -31,16 +31,17 @@ export default async function TeacherDashboard() {
   const rows: TeacherRow[] = students.map((s) => {
     const total = s.hours.reduce((sum, h) => sum + h.calculated_hours, 0);
     const semesters = new Set(s.reflections.map((r) => r.semester));
-    const place = s.placements[0]?.volunteer_place ?? null;
     const prog = currentGradeProgress(s.hours, s.grade_level);
     return {
       id: s.id,
       name: `${s.first_name} ${s.last_name}`,
       national_id: s.national_id,
-      place: place?.place_name ?? null,
-      supervisor: place?.supervisor_name ?? null,
-      supervisorPhone: place?.supervisor_phone ?? null,
-      supervisorEmail: place?.supervisor_email ?? null,
+      places: s.placements.map((pl) => ({
+        name: pl.volunteer_place.place_name,
+        supervisor: pl.volunteer_place.supervisor_name,
+        phone: pl.volunteer_place.supervisor_phone,
+        email: pl.volunteer_place.supervisor_email,
+      })),
       totalHours: total,
       gradeDone: prog.done,
       gradeTarget: prog.target,

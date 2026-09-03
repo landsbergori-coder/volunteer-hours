@@ -18,7 +18,8 @@ export type AdminRow = {
   grade_level: string;
   class_name: string;
   teacher: string;
-  place: string | null;
+  /** כל מקומות ההתנדבות הפעילים — ייתכנו כמה במקביל */
+  places: string[];
   totalHours: number;
   gradeDone: number;
   gradeTarget: number | null;
@@ -48,7 +49,7 @@ export function AdminStudentsTable({ rows }: { rows: AdminRow[] }) {
     [rows]
   );
   const places = useMemo(
-    () => [...new Set(rows.map((r) => r.place).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, "he")),
+    () => [...new Set(rows.flatMap((r) => r.places))].sort((a, b) => a.localeCompare(b, "he")),
     [rows]
   );
 
@@ -58,7 +59,7 @@ export function AdminStudentsTable({ rows }: { rows: AdminRow[] }) {
       if (grade !== "all" && r.grade_level !== grade) return false;
       if (cls !== "all" && r.class_name !== cls) return false;
       if (teacher !== "all" && r.teacher !== teacher) return false;
-      if (place !== "all" && r.place !== place) return false;
+      if (place !== "all" && !r.places.includes(place)) return false;
       if (minH && r.totalHours < Number(minH)) return false;
       if (maxH && r.totalHours > Number(maxH)) return false;
       if (refl === "complete" && !(r.reflA && r.reflB)) return false;
@@ -162,7 +163,17 @@ export function AdminStudentsTable({ rows }: { rows: AdminRow[] }) {
                     <td className="py-2">{gradeLabel[s.grade_level]}</td>
                     <td className="py-2">{s.class_name}</td>
                     <td className="py-2 text-gray-500">{s.teacher}</td>
-                    <td className="py-2">{s.place ?? "—"}</td>
+                    <td className="py-2">
+                      {s.places.length === 0 ? (
+                        "—"
+                      ) : (
+                        <span className="flex flex-wrap gap-1">
+                          {s.places.map((p) => (
+                            <Badge key={p} tone="blue">{p}</Badge>
+                          ))}
+                        </span>
+                      )}
+                    </td>
                     <td className="py-2 font-semibold">{formatHours(s.totalHours)}</td>
                     <td className="py-2" onClick={(e) => e.stopPropagation()}>
                       <ProgressBar done={s.gradeDone} target={s.gradeTarget} compact />
@@ -207,7 +218,9 @@ export function AdminStudentsTable({ rows }: { rows: AdminRow[] }) {
                   <span>שכבה {gradeLabel[s.grade_level]} · {s.class_name}</span>
                   <span className="font-semibold text-gray-700">{formatHours(s.totalHours)} שעות</span>
                   <span className="col-span-2">מחנך/ת: {s.teacher}</span>
-                  <span className="col-span-2">מקום: {s.place ?? "—"}</span>
+                  <span className="col-span-2">
+                    {s.places.length > 1 ? "מקומות" : "מקום"}: {s.places.join(", ") || "—"}
+                  </span>
                 </div>
                 <div className="mt-2">
                   <ProgressBar done={s.gradeDone} target={s.gradeTarget} />

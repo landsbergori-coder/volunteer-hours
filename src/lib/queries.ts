@@ -28,9 +28,21 @@ export type StudentProfile = NonNullable<
   Awaited<ReturnType<typeof getStudentProfile>>
 >;
 
-/** המקום הפעיל של תלמיד (או null). */
-export function activePlacement(profile: StudentProfile) {
-  return profile.placements.find((p) => p.is_active) ?? null;
+/** כל מקומות ההתנדבות הפעילים של תלמיד (ייתכנו כמה במקביל). */
+export function activePlacements(profile: StudentProfile) {
+  return profile.placements.filter((p) => p.is_active);
+}
+
+/** מקומות ההתנדבות שהסתיימו. */
+export function pastPlacements(profile: StudentProfile) {
+  return profile.placements.filter((p) => !p.is_active);
+}
+
+/** שמות המקומות הפעילים כמחרוזת אחת מופרדת בפסיקים. */
+export function activePlaceNames(profile: StudentProfile): string {
+  return activePlacements(profile)
+    .map((p) => p.volunteer_place.place_name)
+    .join(", ");
 }
 
 /** סך שעות מצטבר. */

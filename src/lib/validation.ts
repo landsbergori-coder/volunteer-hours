@@ -61,10 +61,18 @@ export const loginSchema = z.object({
 });
 
 export const hoursSchema = z.object({
+  placement_id: z.coerce
+    .number()
+    .int()
+    .positive("יש לבחור מקום התנדבות"),
   volunteer_date: z.string().min(1, "יש לבחור תאריך"),
   start_time: z.string().regex(/^\d{1,2}:\d{2}$/, "שעת התחלה אינה תקינה"),
   end_time: z.string().regex(/^\d{1,2}:\d{2}$/, "שעת סיום אינה תקינה"),
   description: z.string().trim().max(500).optional().or(z.literal("")),
+});
+
+export const endPlacementSchema = z.object({
+  placement_id: z.coerce.number().int().positive(),
 });
 
 export const placeSchema = z.object({

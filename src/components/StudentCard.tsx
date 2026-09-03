@@ -1,6 +1,6 @@
 import {
   StudentProfile,
-  activePlacement,
+  activePlacements,
   sumHours,
   hoursByPlacement,
 } from "@/lib/queries";
@@ -18,7 +18,7 @@ import { gradeLabel, semesterLabel, BAGRUT_PER_GRADE } from "@/lib/validation";
 
 /** כרטיס תלמיד מלא — לקריאה בלבד, משותף למחנך ולמנהל. */
 export function StudentCard({ profile }: { profile: StudentProfile }) {
-  const active = activePlacement(profile);
+  const actives = activePlacements(profile);
   const total = sumHours(profile);
   const byPlacement = hoursByPlacement(profile);
   const reflA = profile.reflections.find((r) => r.semester === "A");
@@ -79,35 +79,55 @@ export function StudentCard({ profile }: { profile: StudentProfile }) {
       </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* מקום פעיל ואחראי */}
+        {/* מקומות פעילים ואחראים */}
         <Card>
-          <SectionTitle>מקום התנדבות פעיל</SectionTitle>
-          {active ? (
-            <div className="space-y-1 text-sm">
-              <div className="text-base font-semibold">
-                {active.volunteer_place.place_name}
-              </div>
-              <div className="text-gray-600">
-                אחראי: {active.volunteer_place.supervisor_name}
-              </div>
-              <div className="text-gray-600">
-                טלפון: {active.volunteer_place.supervisor_phone}
-              </div>
-              <div className="text-gray-600">
-                אימייל: {active.volunteer_place.supervisor_email}
-              </div>
-              <div className="text-gray-400">
-                מתאריך {formatDate(active.start_date)}
-              </div>
-            </div>
-          ) : (
+          <SectionTitle
+            action={
+              actives.length > 1 ? (
+                <Badge tone="green">{actives.length} מקומות</Badge>
+              ) : undefined
+            }
+          >
+            מקומות התנדבות פעילים
+          </SectionTitle>
+          {actives.length === 0 ? (
             <EmptyState>אין מקום התנדבות פעיל.</EmptyState>
+          ) : (
+            <ul className="space-y-3">
+              {actives.map((a) => (
+                <li
+                  key={a.id}
+                  className="space-y-1 rounded-lg border border-gray-100 p-3 text-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-base font-semibold">
+                      {a.volunteer_place.place_name}
+                    </span>
+                    <span className="font-semibold text-brand-600">
+                      {formatHours(byPlacement.get(a.id) ?? 0)} ש&apos;
+                    </span>
+                  </div>
+                  <div className="text-gray-600">
+                    אחראי: {a.volunteer_place.supervisor_name}
+                  </div>
+                  <div className="text-gray-600">
+                    טלפון: {a.volunteer_place.supervisor_phone}
+                  </div>
+                  <div className="text-gray-600">
+                    אימייל: {a.volunteer_place.supervisor_email}
+                  </div>
+                  <div className="text-gray-400">
+                    מתאריך {formatDate(a.start_date)}
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </Card>
 
         {/* היסטוריית מקומות */}
         <Card>
-          <SectionTitle>היסטוריית מקומות התנדבות</SectionTitle>
+          <SectionTitle>כל מקומות ההתנדבות</SectionTitle>
           {profile.placements.length === 0 ? (
             <EmptyState>אין מקומות התנדבות.</EmptyState>
           ) : (
@@ -124,6 +144,13 @@ export function StudentCard({ profile }: { profile: StudentProfile }) {
                     <span className="mr-2 text-xs text-gray-400">
                       {formatDate(p.start_date)} —{" "}
                       {p.end_date ? formatDate(p.end_date) : "היום"}
+                    </span>
+                    <span className="mr-2">
+                      {p.is_active ? (
+                        <Badge tone="green">פעיל</Badge>
+                      ) : (
+                        <Badge tone="gray">הסתיים</Badge>
+                      )}
                     </span>
                   </div>
                   <span className="font-semibold text-brand-600">
