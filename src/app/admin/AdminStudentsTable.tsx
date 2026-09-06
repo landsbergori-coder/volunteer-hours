@@ -9,11 +9,14 @@ import { Avatar } from "@/components/Avatar";
 import { ProgressBar } from "@/components/ProgressBar";
 import { BagrutTrophy } from "@/components/BagrutTrophy";
 import { formatHours } from "@/lib/hours";
+import { compareByLastName } from "@/lib/format";
 import { gradeLabel } from "@/lib/validation";
 
 export type AdminRow = {
   id: number;
   name: string;
+  first_name: string;
+  last_name: string;
   national_id: string;
   grade_level: string;
   class_name: string;
@@ -54,7 +57,7 @@ export function AdminStudentsTable({ rows }: { rows: AdminRow[] }) {
   );
 
   const view = useMemo(() => {
-    return rows.filter((r) => {
+    return [...rows].sort(compareByLastName).filter((r) => {
       if (q && !r.name.toLowerCase().includes(q.trim().toLowerCase())) return false;
       if (grade !== "all" && r.grade_level !== grade) return false;
       if (cls !== "all" && r.class_name !== cls) return false;

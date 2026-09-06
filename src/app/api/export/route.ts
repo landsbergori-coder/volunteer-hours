@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { gradeLabel } from "@/lib/validation";
+import { compareByLastName } from "@/lib/format";
 import { Role } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
@@ -29,7 +30,14 @@ export async function GET(req: NextRequest) {
     orderBy: [{ class_name: "asc" }, { last_name: "asc" }],
   });
 
-  const data = students.map((s) => {
+  // בתוך כל כיתה — סדר א-ב לפי שם משפחה
+  const data = [...students]
+    .sort(
+      (a, b) =>
+        a.class_name.localeCompare(b.class_name, "he") ||
+        compareByLastName(a, b)
+    )
+    .map((s) => {
     const total = s.hours.reduce((sum, h) => sum + h.calculated_hours, 0);
     const sem = new Set(s.reflections.map((r) => r.semester));
     const places = s.placements.map((pl) => pl.volunteer_place);

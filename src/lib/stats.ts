@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { gradeLabel } from "@/lib/validation";
+import { compareByLastName } from "@/lib/format";
 
 /** מחזיר מפת student_id -> סך שעות מצטבר (מכל מקומות ההתנדבות). */
 export async function getTotalHoursByStudent(): Promise<Map<number, number>> {
@@ -21,6 +22,8 @@ export async function getStudentTotalHours(studentId: number): Promise<number> {
   return agg._sum.calculated_hours ?? 0;
 }
 
+type NamedStudent = { first_name: string; last_name: string };
+
 export type AdminStats = {
   studentCount: number;
   totalHours: number;
@@ -33,13 +36,13 @@ export type AdminStats = {
     avgHours: number;
   }[];
   placeStats: { place_name: string; studentCount: number }[];
-  studentsWithoutHours: { id: number; name: string; class_name: string }[];
-  studentsWithoutReflection: {
+  studentsWithoutHours: ({ id: number; name: string; class_name: string } & NamedStudent)[];
+  studentsWithoutReflection: ({
     id: number;
     name: string;
     class_name: string;
     missing: string;
-  }[];
+  } & NamedStudent)[];
 };
 
 /** מחשב את כל הסטטיסטיקות של מסך המנהל. */
@@ -89,6 +92,8 @@ export async function getAdminStats(): Promise<AdminStats> {
       studentsWithoutHours.push({
         id: s.id,
         name,
+        first_name: s.first_name,
+        last_name: s.last_name,
         class_name: s.class_name,
       });
 
@@ -100,10 +105,15 @@ export async function getAdminStats(): Promise<AdminStats> {
       studentsWithoutReflection.push({
         id: s.id,
         name,
+        first_name: s.first_name,
+        last_name: s.last_name,
         class_name: s.class_name,
         missing: missing.join(", "),
       });
   }
+
+  studentsWithoutHours.sort(compareByLastName);
+  studentsWithoutReflection.sort(compareByLastName);
 
   const classStats = [...byClass.entries()]
     .map(([class_name, v]) => ({

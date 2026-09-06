@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card, StatCard, SectionTitle, EmptyState, Badge } from "@/components/ui";
 import { formatHours } from "@/lib/hours";
-import { formatDate } from "@/lib/format";
+import { formatDate, compareByLastName } from "@/lib/format";
 import { gradeLabel } from "@/lib/validation";
 import { Role } from "@prisma/client";
 import { Users, MapPin } from "lucide-react";
@@ -42,6 +42,8 @@ export default async function SupervisorDashboard() {
   type Row = {
     studentId: number;
     name: string;
+    first_name: string;
+    last_name: string;
     grade: string;
     teacher: string;
     placeName: string;
@@ -67,6 +69,8 @@ export default async function SupervisorDashboard() {
       rows.push({
         studentId: s.id,
         name: `${s.first_name} ${s.last_name}`,
+        first_name: s.first_name,
+        last_name: s.last_name,
         grade: gradeLabel[s.grade_level],
         teacher: s.homeroom_teacher?.full_name ?? "—",
         placeName: place.place_name,
@@ -88,6 +92,7 @@ export default async function SupervisorDashboard() {
     }
   }
 
+  rows.sort(compareByLastName);
   const studentOptions = rows.map((r) => ({ id: r.studentId, name: r.name }));
   const placeNames = places.map((p) => p.place_name).join(", ");
 

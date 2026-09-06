@@ -2,6 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card, StatCard, SectionTitle, EmptyState, Badge } from "@/components/ui";
 import { formatHours } from "@/lib/hours";
+import { compareByLastName } from "@/lib/format";
 import { Role } from "@prisma/client";
 import { Users, Clock, FileSpreadsheet, Trophy } from "lucide-react";
 import { currentGradeProgress, isBagrutEligible } from "@/lib/progress";
@@ -28,13 +29,15 @@ export default async function TeacherDashboard() {
     orderBy: { last_name: "asc" },
   });
 
-  const rows: TeacherRow[] = students.map((s) => {
+  const rows: TeacherRow[] = [...students].sort(compareByLastName).map((s) => {
     const total = s.hours.reduce((sum, h) => sum + h.calculated_hours, 0);
     const semesters = new Set(s.reflections.map((r) => r.semester));
     const prog = currentGradeProgress(s.hours, s.grade_level);
     return {
       id: s.id,
       name: `${s.first_name} ${s.last_name}`,
+      first_name: s.first_name,
+      last_name: s.last_name,
       national_id: s.national_id,
       places: s.placements.map((pl) => ({
         name: pl.volunteer_place.place_name,

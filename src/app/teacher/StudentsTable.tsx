@@ -9,6 +9,7 @@ import { Avatar } from "@/components/Avatar";
 import { ProgressBar } from "@/components/ProgressBar";
 import { BagrutTrophy } from "@/components/BagrutTrophy";
 import { formatHours } from "@/lib/hours";
+import { compareByLastName } from "@/lib/format";
 
 export type TeacherPlace = {
   name: string;
@@ -20,6 +21,8 @@ export type TeacherPlace = {
 export type TeacherRow = {
   id: number;
   name: string;
+  first_name: string;
+  last_name: string;
   national_id: string;
   /** כל מקומות ההתנדבות הפעילים — תלמיד/ה יכול/ה להתנדב בכמה מקומות במקביל */
   places: TeacherPlace[];
@@ -63,7 +66,7 @@ export function StudentsTable({
           b.places[0]?.name ?? "",
           "he"
         );
-      return a.name.localeCompare(b.name, "he");
+      return compareByLastName(a, b);
     });
     return r;
   }, [rows, q, sort, filter, lowThreshold]);
@@ -88,7 +91,7 @@ export function StudentsTable({
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
         >
-          <option value="name">מיון: שם</option>
+          <option value="name">מיון: שם משפחה</option>
           <option value="hours">מיון: מספר שעות</option>
           <option value="place">מיון: מקום התנדבות</option>
         </select>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getAdminStats } from "@/lib/stats";
 import { Card, StatCard, SectionTitle, EmptyState, Badge } from "@/components/ui";
 import { formatHours } from "@/lib/hours";
+import { compareByLastName } from "@/lib/format";
 import { Role } from "@prisma/client";
 import { Users, Clock, MapPin, TrendingUp, FileSpreadsheet, Trophy } from "lucide-react";
 import { gradeLabel } from "@/lib/validation";
@@ -29,13 +30,15 @@ export default async function AdminDashboard() {
     orderBy: { last_name: "asc" },
   });
 
-  const rows: AdminRow[] = students.map((s) => {
+  const rows: AdminRow[] = [...students].sort(compareByLastName).map((s) => {
     const total = s.hours.reduce((sum, h) => sum + h.calculated_hours, 0);
     const sem = new Set(s.reflections.map((r) => r.semester));
     const prog = currentGradeProgress(s.hours, s.grade_level);
     return {
       id: s.id,
       name: `${s.first_name} ${s.last_name}`,
+      first_name: s.first_name,
+      last_name: s.last_name,
       national_id: s.national_id,
       grade_level: s.grade_level,
       class_name: s.class_name,

@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { STANDARD_HOURS } from "@/lib/validation";
 import { hoursInGrade, certificateEvaluation } from "@/lib/progress";
+import { compareByLastName } from "@/lib/format";
 import { Role } from "@prisma/client";
 
 /**
@@ -31,7 +32,7 @@ export async function GET() {
     orderBy: { last_name: "asc" },
   });
 
-  const rows = students.map((s) => {
+  const rows = [...students].sort(compareByLastName).map((s) => {
     const done = hoursInGrade(s.hours, s.grade_level, s.grade_level);
     const target = STANDARD_HOURS[s.grade_level] ?? 0;
     return {
