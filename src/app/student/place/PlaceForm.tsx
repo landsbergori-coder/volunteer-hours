@@ -59,8 +59,15 @@ export function PlaceForm({ hasActive }: { hasActive: boolean }) {
           <Err msg={e.supervisor_phone} />
         </div>
         <div>
-          <label className="label">אימייל של האחראי</label>
+          <label className="label">
+            אימייל של האחראי{" "}
+            <span className="font-normal text-gray-400">(לא חובה)</span>
+          </label>
           <input name="supervisor_email" type="email" className="input" />
+          <p className="mt-1 text-xs text-gray-500">
+            אם לאחראי יש חשבון במערכת, האימייל מקשר אליו את מקום ההתנדבות
+            ומאפשר לו לכתוב עליך הערכה.
+          </p>
           <Err msg={e.supervisor_email} />
         </div>
       </div>

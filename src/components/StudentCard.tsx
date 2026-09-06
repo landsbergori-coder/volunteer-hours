@@ -113,9 +113,11 @@ export function StudentCard({ profile }: { profile: StudentProfile }) {
                   <div className="text-gray-600">
                     טלפון: {a.volunteer_place.supervisor_phone}
                   </div>
-                  <div className="text-gray-600">
-                    אימייל: {a.volunteer_place.supervisor_email}
-                  </div>
+                  {a.volunteer_place.supervisor_email && (
+                    <div className="text-gray-600">
+                      אימייל: {a.volunteer_place.supervisor_email}
+                    </div>
+                  )}
                   <div className="text-gray-400">
                     מתאריך {formatDate(a.start_date)}
                   </div>

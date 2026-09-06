@@ -158,7 +158,12 @@ export function StudentsTable({
                       {s.places.length === 0
                         ? "—"
                         : s.places.map((p, i) => (
-                            <span key={p.name} title={`${p.phone} · ${p.email}`}>
+                            <span
+                              key={p.name}
+                              title={[p.phone, p.email]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            >
                               {i > 0 && ", "}
                               {p.supervisor}
                             </span>

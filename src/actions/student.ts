@@ -94,17 +94,27 @@ export async function addPlaceAction(
   const parsed = parseForm(placeSchema, formData);
   if (!parsed.success) return { ok: false, errors: parsed.errors };
   const d = parsed.data;
-  const supEmail = d.supervisor_email.toLowerCase();
+  // האימייל אינו חובה. כשהוא ריק פשוט לא נוצר קישור לחשבון אחראי.
+  const supEmail = (d.supervisor_email ?? "").toLowerCase();
 
   const result = await prisma.$transaction(async (tx) => {
     // קישור לאחראי קיים אם יש חשבון תואם לפי אימייל
-    const supervisorUser = await tx.user.findUnique({
-      where: { email: supEmail },
-    });
+    const supervisorUser = supEmail
+      ? await tx.user.findUnique({ where: { email: supEmail } })
+      : null;
 
-    // מציאת מקום קיים תואם, אחרת יצירה
+    // מציאת מקום קיים תואם, אחרת יצירה.
+    // בלי אימייל אין מזהה ייחודי למקום, ולכן ההתאמה היא לפי שם המקום
+    // יחד עם פרטי האחראי — אחרת שני מקומות שונים בעלי אותו שם היו מתמזגים.
     let place = await tx.volunteerPlace.findFirst({
-      where: { place_name: d.place_name, supervisor_email: supEmail },
+      where: supEmail
+        ? { place_name: d.place_name, supervisor_email: supEmail }
+        : {
+            place_name: d.place_name,
+            supervisor_email: "",
+            supervisor_name: d.supervisor_name,
+            supervisor_phone: d.supervisor_phone,
+          },
     });
     if (!place) {
       place = await tx.volunteerPlace.create({

@@ -98,7 +98,13 @@ export const placeSchema = z.object({
     .string()
     .trim()
     .regex(/^0\d{1,2}-?\d{7}$/, "מספר טלפון אינו תקין"),
-  supervisor_email: z.string().trim().email("אימייל האחראי אינו תקין"),
+  // אופציונלי — אם ימולא, הוא מקשר את המקום לחשבון "אחראי מקום התנדבות" קיים
+  supervisor_email: z
+    .string()
+    .trim()
+    .email("אימייל האחראי אינו תקין")
+    .optional()
+    .or(z.literal("")),
 });
 
 export const reflectionSchema = z.object({
