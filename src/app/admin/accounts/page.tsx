@@ -1,11 +1,9 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { Card, SectionTitle, EmptyState, Badge } from "@/components/ui";
-import { roleLabel } from "@/lib/validation";
+import { Card, SectionTitle } from "@/components/ui";
 import { Role } from "@prisma/client";
 import { CreateUserForm } from "./CreateUserForm";
-import { DeleteStaffButton } from "./DeleteStaffButton";
-import { EditTeacherClassForm } from "./EditTeacherClassForm";
+import { AccountsTable, AccountRow } from "./AccountsTable";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +17,21 @@ export default async function AccountsPage() {
     include: { teacher: { include: { _count: { select: { students: true } } } } },
     orderBy: [{ role: "asc" }, { full_name: "asc" }],
   });
+
+  const rows: AccountRow[] = users.map((u) => ({
+    userId: u.id,
+    full_name: u.full_name,
+    role: u.role,
+    email: u.email,
+    teacher: u.teacher
+      ? {
+          id: u.teacher.id,
+          class_name: u.teacher.class_name,
+          grade_level: u.teacher.grade_level,
+          studentCount: u.teacher._count.students,
+        }
+      : null,
+  }));
 
   return (
     <div className="space-y-6">
@@ -36,56 +49,7 @@ export default async function AccountsPage() {
 
         <Card className="lg:col-span-2">
           <SectionTitle>חשבונות קיימים ({users.length})</SectionTitle>
-          {users.length === 0 ? (
-            <EmptyState>עדיין לא נוצרו חשבונות.</EmptyState>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-sm">
-                <thead className="text-xs text-gray-500">
-                  <tr className="border-b">
-                    <th className="py-2 font-medium">שם</th>
-                    <th className="py-2 font-medium">תפקיד</th>
-                    <th className="py-2 font-medium">אימייל</th>
-                    <th className="py-2 font-medium">כיתה ושכבה</th>
-                    <th className="py-2 text-left font-medium">מחיקה</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id} className="border-b last:border-0">
-                      <td className="py-2 font-medium">{u.full_name}</td>
-                      <td className="py-2">
-                        <Badge tone={u.role === Role.TEACHER ? "blue" : "amber"}>
-                          {roleLabel[u.role]}
-                        </Badge>
-                      </td>
-                      <td className="py-2 text-gray-500">{u.email}</td>
-                      <td className="py-2">
-                        {u.teacher ? (
-                          <EditTeacherClassForm
-                            teacherId={u.teacher.id}
-                            className={u.teacher.class_name}
-                            gradeLevel={u.teacher.grade_level}
-                          />
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="py-2">
-                        <div className="flex justify-end">
-                          <DeleteStaffButton
-                            userId={u.id}
-                            name={u.full_name}
-                            studentCount={u.teacher?._count.students}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <AccountsTable rows={rows} />
         </Card>
       </div>
     </div>

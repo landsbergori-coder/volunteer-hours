@@ -29,3 +29,12 @@ export function compareByLastName(
     a.first_name.localeCompare(b.first_name, "he")
   );
 }
+
+/**
+ * שם המשפחה מתוך שם מלא של איש/אשת צוות — המילה האחרונה בשם.
+ * לצוות אין שדות שם נפרדים במסד, בניגוד לתלמידים.
+ */
+export function lastNameOf(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  return parts[parts.length - 1] || fullName;
+}
