@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { GradeLevel } from "@prisma/client";
+import { compareByLastName } from "@/lib/format";
 
 /** כיתה כפי שהיא מוצגת לבחירה — מקורה ברשומת המחנך/ת. */
 export type ClassOption = {
@@ -78,4 +79,68 @@ export function hoursByPlacement(profile: StudentProfile): Map<number, number> {
     map.set(h.placement_id, (map.get(h.placement_id) ?? 0) + h.calculated_hours);
   }
   return map;
+}
+
+/** שורת סיכום למקום התנדבות — למסך המנהל ולייצוא לאקסל. */
+export type PlaceSummary = {
+  id: number;
+  place_name: string;
+  supervisor_name: string;
+  supervisor_phone: string;
+  supervisor_email: string;
+  /** האם המקום מקושר לחשבון "אחראי מקום התנדבות" פעיל במערכת */
+  hasSupervisorAccount: boolean;
+  activeStudents: { name: string; class_name: string }[];
+  totalStudents: number;
+  totalHours: number;
+};
+
+/**
+ * כל מקומות ההתנדבות עם נתוני שימוש, בסדר א-ב של שם המקום.
+ * תלמידים בארכיון אינם נספרים.
+ */
+export async function getPlacesSummary(): Promise<PlaceSummary[]> {
+  const notArchived = { user: { archived_at: null } };
+  const places = await prisma.volunteerPlace.findMany({
+    include: {
+      supervisor: { select: { archived_at: true } },
+      placements: {
+        where: { student: notArchived },
+        select: {
+          is_active: true,
+          student: {
+            select: { id: true, first_name: true, last_name: true, class_name: true },
+          },
+        },
+      },
+      hours: {
+        where: { student: notArchived },
+        select: { calculated_hours: true },
+      },
+    },
+  });
+
+  return places
+    .map((p) => {
+      const active = p.placements
+        .filter((pl) => pl.is_active)
+        .map((pl) => pl.student)
+        .sort(compareByLastName);
+      return {
+        id: p.id,
+        place_name: p.place_name,
+        supervisor_name: p.supervisor_name,
+        supervisor_phone: p.supervisor_phone,
+        supervisor_email: p.supervisor_email,
+        hasSupervisorAccount: !!p.supervisor && !p.supervisor.archived_at,
+        // תלמיד/ה עשוי/ה להופיע פעמיים (שיבוץ שהסתיים וחודש) — סופרים פעם אחת
+        activeStudents: [...new Map(active.map((s) => [s.id, s])).values()].map(
+          (s) => ({ name: `${s.last_name} ${s.first_name}`, class_name: s.class_name })
+        ),
+        totalStudents: new Set(p.placements.map((pl) => pl.student.id)).size,
+        totalHours:
+          Math.round(p.hours.reduce((sum, h) => sum + h.calculated_hours, 0) * 10) / 10,
+      };
+    })
+    .sort((a, b) => a.place_name.localeCompare(b.place_name, "he"));
 }

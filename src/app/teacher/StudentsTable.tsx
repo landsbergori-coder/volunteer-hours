@@ -115,7 +115,8 @@ export function StudentsTable({
             <table className="w-full text-right text-sm">
               <thead className="text-xs text-gray-500">
                 <tr className="border-b">
-                  <th className="py-2 font-medium">שם</th>
+                  <th className="w-10 py-2 font-medium">#</th>
+                  <th className="py-2 font-medium">שם משפחה ושם פרטי</th>
                   <th className="py-2 font-medium">ת&quot;ז</th>
                   <th className="py-2 font-medium">מקום התנדבות</th>
                   <th className="py-2 font-medium">אחראי</th>
@@ -127,16 +128,17 @@ export function StudentsTable({
                 </tr>
               </thead>
               <tbody>
-                {view.map((s) => (
+                {view.map((s, i) => (
                   <tr
                     key={s.id}
                     onClick={() => router.push(`/teacher/student/${s.id}`)}
                     className="cursor-pointer border-b last:border-0 hover:bg-gray-50"
                   >
+                    <td className="py-2 tabular-nums text-gray-400">{i + 1}</td>
                     <td className="py-2">
                       <span className="flex items-center gap-2 font-medium">
                         <Avatar name={s.name} size="sm" />
-                        {s.name}
+                        {s.last_name} {s.first_name}
                         {s.bagrutEligible && <BagrutTrophy compact />}
                       </span>
                     </td>
@@ -198,7 +200,7 @@ export function StudentsTable({
 
           {/* מובייל: כרטיסים */}
           <div className="space-y-3 md:hidden">
-            {view.map((s) => (
+            {view.map((s, i) => (
               <Link
                 key={s.id}
                 href={`/teacher/student/${s.id}`}
@@ -206,8 +208,11 @@ export function StudentsTable({
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-2 font-semibold">
+                    <span className="w-6 text-center text-sm font-normal tabular-nums text-gray-400">
+                      {i + 1}
+                    </span>
                     <Avatar name={s.name} size="sm" />
-                    {s.name}
+                    {s.last_name} {s.first_name}
                     {s.bagrutEligible && <BagrutTrophy compact />}
                   </span>
                   <ChevronLeft size={18} className="text-gray-400" />
