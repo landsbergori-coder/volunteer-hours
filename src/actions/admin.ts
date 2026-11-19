@@ -13,7 +13,23 @@ import {
   updateTeacherClassSchema,
 } from "@/lib/validation";
 import { ActionState, parseForm } from "@/lib/form";
-import { Role, GradeLevel } from "@prisma/client";
+import { Role, GradeLevel, Prisma } from "@prisma/client";
+
+/**
+ * שיוך תלמידים "יתומים" (ללא מחנך/ת — למשל אחרי מחיקת המחנך/ת הקודם/ת)
+ * למחנך/ת לפי שם הכיתה. מחזיר את מספר התלמידים ששויכו.
+ */
+async function adoptOrphanStudents(
+  tx: Prisma.TransactionClient,
+  teacherId: number,
+  className: string
+): Promise<number> {
+  const { count } = await tx.student.updateMany({
+    where: { homeroom_teacher_id: null, class_name: className },
+    data: { homeroom_teacher_id: teacherId },
+  });
+  return count;
+}
 
 /** יצירת חשבון מחנך/ת או אחראי ע"י מנהל המערכת. */
 export async function createUserAction(
@@ -38,33 +54,44 @@ export async function createUserAction(
 
   const password_hash = await bcrypt.hash(d.password, 10);
 
-  await prisma.user.create({
-    data: {
-      full_name: d.full_name,
-      email,
-      password_hash,
-      role: d.role as Role,
-      // סיסמה זמנית — המשתמש יחליף אותה בכניסה הראשונה
-      must_change_password: true,
-      ...(d.role === "TEACHER"
-        ? {
-            teacher: {
-              create: {
-                full_name: d.full_name,
-                email,
-                class_name: d.class_name!,
-                grade_level: d.grade_level as GradeLevel,
+  const adopted = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        full_name: d.full_name,
+        email,
+        password_hash,
+        role: d.role as Role,
+        // סיסמה זמנית — המשתמש יחליף אותה בכניסה הראשונה
+        must_change_password: true,
+        ...(d.role === "TEACHER"
+          ? {
+              teacher: {
+                create: {
+                  full_name: d.full_name,
+                  email,
+                  class_name: d.class_name!,
+                  grade_level: d.grade_level as GradeLevel,
+                },
               },
-            },
-          }
-        : {}),
-    },
+            }
+          : {}),
+      },
+      include: { teacher: true },
+    });
+    // מחנך/ת שנוצר/ה מחדש מקבל/ת בחזרה את תלמידי הכיתה שנותרו ללא מחנך
+    return user.teacher
+      ? adoptOrphanStudents(tx, user.teacher.id, user.teacher.class_name)
+      : 0;
   });
 
   revalidatePath("/admin/accounts");
+  revalidatePath("/admin");
+  revalidatePath("/teacher");
   return {
     ok: true,
-    message: `החשבון של ${d.full_name} נוצר בהצלחה. הסיסמה שהוזנה היא זמנית — המשתמש יתבקש להחליפה בכניסה הראשונה.`,
+    message:
+      `החשבון של ${d.full_name} נוצר בהצלחה. הסיסמה שהוזנה היא זמנית — המשתמש יתבקש להחליפה בכניסה הראשונה.` +
+      (adopted > 0 ? ` ${adopted} תלמידים קיימים בכיתה שויכו אליו/ה.` : ""),
   };
 }
 
@@ -115,6 +142,24 @@ export async function resetAdminPasswordAction(
     data: { password_hash, must_change_password: true },
   });
   redirect(flash("/admin/admins", "הסיסמה אופסה — המנהל יחליף בכניסה הבאה"));
+}
+
+/** איפוס סיסמת מחנך/ת או אחראי לסיסמה זמנית חדשה (כפיית החלפה בכניסה הבאה). */
+export async function resetStaffPasswordAction(
+  formData: FormData
+): Promise<void> {
+  await requireRole(Role.ADMIN);
+  const id = Number(formData.get("id"));
+  const newPassword = String(formData.get("password") ?? "");
+  if (!id || newPassword.length < 6) return;
+  const password_hash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.updateMany({
+    where: { id, role: { in: [Role.TEACHER, Role.SUPERVISOR] } },
+    data: { password_hash, must_change_password: true },
+  });
+  redirect(
+    flash("/admin/accounts", "הסיסמה אופסה — המשתמש יחליף אותה בכניסה הבאה")
+  );
 }
 
 /** מחיקת מנהל. אסור למחוק את עצמך או את המנהל האחרון שנותר. */
@@ -359,20 +404,28 @@ export async function updateTeacherClassAction(
   });
   if (!teacher) return { ok: false, message: "מחנך/ת לא נמצא/ה" };
 
-  await prisma.$transaction([
-    prisma.teacher.update({
+  const adopted = await prisma.$transaction(async (tx) => {
+    await tx.teacher.update({
       where: { id: teacher.id },
       data: { class_name: d.class_name, grade_level: d.grade_level },
-    }),
-    prisma.student.updateMany({
+    });
+    await tx.student.updateMany({
       where: { homeroom_teacher_id: teacher.id },
       data: { class_name: d.class_name },
-    }),
-  ]);
+    });
+    // תלמידי הכיתה שנותרו ללא מחנך (למשל אחרי מחיקה ויצירה מחדש) משויכים אליו/ה
+    return adoptOrphanStudents(tx, teacher.id, d.class_name);
+  });
 
   revalidatePath("/admin/accounts");
   revalidatePath("/admin");
-  return { ok: true, message: `הכיתה של ${teacher.full_name} עודכנה` };
+  revalidatePath("/teacher");
+  return {
+    ok: true,
+    message:
+      `הכיתה של ${teacher.full_name} עודכנה` +
+      (adopted > 0 ? ` (שויכו ${adopted} תלמידים)` : ""),
+  };
 }
 
 /**

@@ -5,6 +5,8 @@ import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { Badge, EmptyState } from "@/components/ui";
 import { roleLabel, gradeLevels } from "@/lib/validation";
 import { lastNameOf } from "@/lib/format";
+import { ResetPasswordButton } from "@/components/ResetPasswordButton";
+import { resetStaffPasswordAction } from "@/actions/admin";
 import { DeleteStaffButton } from "./DeleteStaffButton";
 import { EditTeacherClassForm } from "./EditTeacherClassForm";
 
@@ -131,7 +133,7 @@ export function AccountsTable({ rows }: { rows: AccountRow[] }) {
               <SortHeader id="role">תפקיד</SortHeader>
               <SortHeader id="email">אימייל</SortHeader>
               <SortHeader id="class">כיתה ושכבה</SortHeader>
-              <th className="py-2 text-left font-medium">מחיקה</th>
+              <th className="py-2 text-left font-medium">פעולות</th>
             </tr>
           </thead>
           <tbody>
@@ -156,7 +158,11 @@ export function AccountsTable({ rows }: { rows: AccountRow[] }) {
                   )}
                 </td>
                 <td className="py-2">
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-end gap-2">
+                    <ResetPasswordButton
+                      id={u.userId}
+                      action={resetStaffPasswordAction}
+                    />
                     <DeleteStaffButton
                       userId={u.userId}
                       name={u.full_name}
