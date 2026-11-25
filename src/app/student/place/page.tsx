@@ -13,6 +13,7 @@ import { formatHours } from "@/lib/hours";
 import { formatDate } from "@/lib/format";
 import { Role } from "@prisma/client";
 import { PlaceForm } from "./PlaceForm";
+import { EditSupervisorForm } from "./EditSupervisorForm";
 import { LogOut } from "lucide-react";
 
 export default async function StudentPlacePage() {
@@ -82,6 +83,12 @@ export default async function StudentPlacePage() {
                         <LogOut size={16} /> סיום
                       </ConfirmButton>
                     </div>
+                    <EditSupervisorForm
+                      placementId={p.id}
+                      name={p.volunteer_place.supervisor_name}
+                      phone={p.volunteer_place.supervisor_phone}
+                      email={p.volunteer_place.supervisor_email}
+                    />
                   </li>
                 ))}
               </ul>

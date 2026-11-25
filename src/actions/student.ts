@@ -6,13 +6,14 @@ import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import { calculateHours, isValidVolunteerDate } from "@/lib/hours";
 import {
+  editSupervisorSchema,
   endPlacementSchema,
   hoursSchema,
   placeSchema,
   reflectionSchema,
 } from "@/lib/validation";
 import { ActionState, parseForm } from "@/lib/form";
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 
 /** מאתר את רשומת התלמיד של המשתמש המחובר. */
 async function getCurrentStudent() {
@@ -81,6 +82,16 @@ export async function deleteHoursAction(formData: FormData): Promise<void> {
   revalidatePath("/student/hours");
 }
 
+/** קישור לחשבון "אחראי מקום התנדבות" קיים לפי אימייל (אם יש כזה). */
+async function supervisorUserIdFor(
+  tx: Prisma.TransactionClient,
+  email: string
+): Promise<number | null> {
+  if (!email) return null;
+  const user = await tx.user.findUnique({ where: { email } });
+  return user?.role === Role.SUPERVISOR ? user.id : null;
+}
+
 /**
  * הוספת מקום התנדבות פעיל.
  * תלמיד/ה יכול/ה להתנדב בכמה מקומות במקביל — המקומות הפעילים הקיימים
@@ -98,11 +109,6 @@ export async function addPlaceAction(
   const supEmail = (d.supervisor_email ?? "").toLowerCase();
 
   const result = await prisma.$transaction(async (tx) => {
-    // קישור לאחראי קיים אם יש חשבון תואם לפי אימייל
-    const supervisorUser = supEmail
-      ? await tx.user.findUnique({ where: { email: supEmail } })
-      : null;
-
     // מציאת מקום קיים תואם, אחרת יצירה.
     // בלי אימייל אין מזהה ייחודי למקום, ולכן ההתאמה היא לפי שם המקום
     // יחד עם פרטי האחראי — אחרת שני מקומות שונים בעלי אותו שם היו מתמזגים.
@@ -123,10 +129,7 @@ export async function addPlaceAction(
           supervisor_name: d.supervisor_name,
           supervisor_phone: d.supervisor_phone,
           supervisor_email: supEmail,
-          supervisor_user_id:
-            supervisorUser?.role === Role.SUPERVISOR
-              ? supervisorUser.id
-              : null,
+          supervisor_user_id: await supervisorUserIdFor(tx, supEmail),
         },
       });
     }
@@ -161,6 +164,101 @@ export async function addPlaceAction(
   revalidatePath("/student/place");
   revalidatePath("/student/hours");
   return { ok: true, message: `מקום ההתנדבות "${result.name}" נוסף בהצלחה` };
+}
+
+/**
+ * עדכון פרטי האחראי (שם, טלפון, אימייל) במקום התנדבות פעיל של התלמיד/ה.
+ * השינוי חל על התלמיד/ה בלבד: אם תלמידים אחרים משויכים לאותו מקום,
+ * ההתנדבות של התלמיד/ה (כולל השעות שדווחו בה) עוברת לרשומת מקום נפרדת
+ * עם הפרטים החדשים, ושאר התלמידים נשארים עם הפרטים הקודמים.
+ */
+export async function updatePlaceSupervisorAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const student = await getCurrentStudent();
+  const parsed = parseForm(editSupervisorSchema, formData);
+  if (!parsed.success) return { ok: false, errors: parsed.errors };
+  const d = parsed.data;
+
+  const placement = await prisma.studentVolunteerPlacement.findFirst({
+    where: { id: d.placement_id, student_id: student.id, is_active: true },
+    include: { volunteer_place: true },
+  });
+  if (!placement)
+    return { ok: false, message: "מקום ההתנדבות לא נמצא או שאינו פעיל" };
+
+  const old = placement.volunteer_place;
+  const details = {
+    supervisor_name: d.supervisor_name,
+    supervisor_phone: d.supervisor_phone,
+    supervisor_email: (d.supervisor_email ?? "").toLowerCase(),
+  };
+  if (
+    old.supervisor_name === details.supervisor_name &&
+    old.supervisor_phone === details.supervisor_phone &&
+    old.supervisor_email === details.supervisor_email
+  )
+    return { ok: true, message: "לא בוצע שינוי" };
+
+  const error = await prisma.$transaction(async (tx) => {
+    const supervisor_user_id = await supervisorUserIdFor(
+      tx,
+      details.supervisor_email
+    );
+    const sharedWithOthers =
+      (await tx.studentVolunteerPlacement.count({
+        where: { volunteer_place_id: old.id, student_id: { not: student.id } },
+      })) > 0;
+
+    // המקום של התלמיד/ה בלבד — מעדכנים אותו ישירות
+    if (!sharedWithOthers) {
+      await tx.volunteerPlace.update({
+        where: { id: old.id },
+        data: { ...details, supervisor_user_id },
+      });
+      return null;
+    }
+
+    // מקום משותף — מעבירים רק את ההתנדבות הזו למקום עם הפרטים החדשים
+    let target = await tx.volunteerPlace.findFirst({
+      where: { place_name: old.place_name, ...details, id: { not: old.id } },
+    });
+    if (target) {
+      const duplicate = await tx.studentVolunteerPlacement.findFirst({
+        where: {
+          student_id: student.id,
+          volunteer_place_id: target.id,
+          is_active: true,
+        },
+      });
+      if (duplicate)
+        return "כבר יש לך מקום התנדבות פעיל עם אותו שם ואותם פרטי אחראי.";
+    } else {
+      target = await tx.volunteerPlace.create({
+        data: { place_name: old.place_name, ...details, supervisor_user_id },
+      });
+    }
+    await tx.studentVolunteerPlacement.update({
+      where: { id: placement.id },
+      data: { volunteer_place_id: target.id },
+    });
+    await tx.volunteerHours.updateMany({
+      where: { placement_id: placement.id },
+      data: { volunteer_place_id: target.id },
+    });
+    return null;
+  });
+
+  if (error) return { ok: false, message: error };
+
+  revalidatePath("/student");
+  revalidatePath("/student/place");
+  revalidatePath("/student/hours");
+  revalidatePath("/teacher");
+  revalidatePath("/admin");
+  revalidatePath("/admin/places");
+  return { ok: true, message: "פרטי האחראי עודכנו" };
 }
 
 /**

@@ -107,6 +107,11 @@ export const placeSchema = z.object({
     .or(z.literal("")),
 });
 
+/** עדכון פרטי האחראי של מקום התנדבות פעיל ע"י התלמיד/ה. */
+export const editSupervisorSchema = placeSchema.omit({ place_name: true }).extend({
+  placement_id: z.coerce.number().int().positive(),
+});
+
 export const reflectionSchema = z.object({
   semester: z.enum(["A", "B"], {
     errorMap: () => ({ message: "יש לבחור מחצית" }),

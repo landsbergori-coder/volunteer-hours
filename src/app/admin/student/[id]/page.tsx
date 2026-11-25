@@ -4,6 +4,8 @@ import { ArrowRight, FileSpreadsheet } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { getStudentProfile, listClasses } from "@/lib/queries";
 import { StudentCard } from "@/components/StudentCard";
+import { ResetPasswordButton } from "@/components/ResetPasswordButton";
+import { resetStudentPasswordAction } from "@/actions/password";
 import { DeleteStudentButton } from "./DeleteStudentButton";
 import { EditStudentForm } from "./EditStudentForm";
 import { Role } from "@prisma/client";
@@ -29,7 +31,11 @@ export default async function AdminStudentCard({
         >
           <ArrowRight size={16} /> חזרה לסקירה הכללית
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <ResetPasswordButton
+            id={profile.id}
+            action={resetStudentPasswordAction}
+          />
           <a
             href={`/api/export/reflections?scope=student&value=${profile.id}`}
             className="btn-secondary"

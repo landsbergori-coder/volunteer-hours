@@ -5,6 +5,8 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getStudentProfile } from "@/lib/queries";
 import { StudentCard } from "@/components/StudentCard";
+import { ResetPasswordButton } from "@/components/ResetPasswordButton";
+import { resetStudentPasswordAction } from "@/actions/password";
 import { Role } from "@prisma/client";
 
 export default async function TeacherStudentCard({
@@ -34,12 +36,18 @@ export default async function TeacherStudentCard({
         >
           <ArrowRight size={16} /> חזרה לרשימת הכיתה
         </Link>
-        <a
-          href={`/api/export/reflections?scope=student&value=${profile.id}`}
-          className="btn-secondary"
-        >
-          <FileSpreadsheet size={16} /> ייצוא רפלקציה והערכות
-        </a>
+        <div className="flex flex-wrap items-center gap-2">
+          <ResetPasswordButton
+            id={profile.id}
+            action={resetStudentPasswordAction}
+          />
+          <a
+            href={`/api/export/reflections?scope=student&value=${profile.id}`}
+            className="btn-secondary"
+          >
+            <FileSpreadsheet size={16} /> ייצוא רפלקציה והערכות
+          </a>
+        </div>
       </div>
       <StudentCard profile={profile} />
     </div>
